@@ -1,1 +1,662 @@
-$(cat /home/claude/jobtrack-ai/src/App.jsx)
+import { useState, useRef } from "react";
+
+const STATUS_CONFIG = {
+  "Saved":        { color: "#64748b", bg: "#f1f5f9" },
+  "Applied":      { color: "#2563eb", bg: "#eff6ff" },
+  "Interviewing": { color: "#7c3aed", bg: "#f5f3ff" },
+  "Offer":        { color: "#059669", bg: "#ecfdf5" },
+  "Rejected":     { color: "#dc2626", bg: "#fef2f2" },
+};
+const STATUSES = Object.keys(STATUS_CONFIG);
+
+const JOB_BOARDS = [
+  { name: "Indeed",    icon: "🔵", url: "https://www.indeed.com/jobs?q=product+manager&l=remote", color: "#2164f3" },
+  { name: "LinkedIn",  icon: "💼", url: "https://www.linkedin.com/jobs/search/?keywords=product+manager&location=Remote", color: "#0a66c2" },
+  { name: "Glassdoor", icon: "🟢", url: "https://www.glassdoor.com/Job/remote-product-manager-jobs-SRCH_IL.0,6_IS11047_KO7,22.htm", color: "#0caa41" },
+  { name: "Dice",      icon: "🎲", url: "https://www.dice.com/jobs?q=product+manager&location=Remote", color: "#e85d26" },
+  { name: "Wellfound", icon: "🚀", url: "https://wellfound.com/jobs?role=product-manager", color: "#000000" },
+];
+
+function ScoreBadge({ score }) {
+  const color = score >= 80 ? "#10b981" : score >= 65 ? "#f59e0b" : "#ef4444";
+  const bg    = score >= 80 ? "#ecfdf5" : score >= 65 ? "#fffbeb" : "#fef2f2";
+  return (
+    <div style={{ display:"inline-flex", alignItems:"center", gap:4, background:bg, color, borderRadius:20, padding:"2px 10px", fontWeight:700, fontSize:13 }}>
+      <span style={{ fontSize:9 }}>●</span> {score}
+    </div>
+  );
+}
+
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG["Saved"];
+  return <span style={{ background:cfg.bg, color:cfg.color, borderRadius:20, padding:"3px 12px", fontSize:12, fontWeight:600 }}>{status}</span>;
+}
+
+function AnalysisPanel({ analysis, loading, onRun, jobTitle, company, hasResume }) {
+  if (!hasResume) return (
+    <div style={{ padding:"24px", textAlign:"center", background:"#fffbeb", borderRadius:12, border:"1px dashed #fde68a" }}>
+      <div style={{ fontSize:32, marginBottom:8 }}>📄</div>
+      <p style={{ color:"#92400e", fontSize:14, lineHeight:1.6 }}>Upload or paste your resume in <strong>My Resume</strong> tab first.</p>
+    </div>
+  );
+  if (loading) return (
+    <div style={{ padding:"32px 0", textAlign:"center" }}>
+      <div style={{ display:"inline-block", width:28, height:28, border:"3px solid #e2e8f0", borderTopColor:"#6366f1", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <p style={{ marginTop:12, color:"#64748b", fontSize:14 }}>Analyzing your fit for this role...</p>
+    </div>
+  );
+  if (!analysis) return (
+    <div style={{ padding:"24px", textAlign:"center", background:"#f8fafc", borderRadius:12, border:"1px dashed #cbd5e1" }}>
+      <div style={{ fontSize:32, marginBottom:8 }}>🔍</div>
+      <p style={{ color:"#64748b", fontSize:14, marginBottom:16, lineHeight:1.6 }}>Run AI gap analysis for <strong>{jobTitle}</strong> at <strong>{company}</strong>.</p>
+      <button onClick={onRun} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", border:"none", borderRadius:8, padding:"10px 24px", fontWeight:600, fontSize:14, cursor:"pointer" }}>
+        ✨ Run Gap Analysis
+      </button>
+    </div>
+  );
+  const sections = analysis.split(/\n(?=##)/).filter(Boolean);
+  const icons = { "Match Score":"🎯", "Strong Matches":"✅", "Skill Gaps":"⚠️", "Keywords to Add":"🏷️", "Top Recommendation":"💡" };
+  return (
+    <div style={{ fontSize:14, lineHeight:1.7 }}>
+      {sections.map((section, i) => {
+        const lines = section.trim().split("\n");
+        const heading = lines[0].replace(/^#+\s*/, "");
+        const body = lines.slice(1).join("\n").trim();
+        const icon = Object.entries(icons).find(([k]) => heading.includes(k))?.[1] || "📌";
+        const isFirst = i===0, isLast = i===sections.length-1;
+        return (
+          <div key={i} style={{ marginBottom:16, background:isFirst?"linear-gradient(135deg,#f0fdf4,#dcfce7)":isLast?"#fffbeb":"#f8fafc", borderRadius:10, padding:"14px 16px", border:`1px solid ${isFirst?"#bbf7d0":isLast?"#fde68a":"#e2e8f0"}` }}>
+            <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#0f172a" }}>{icon} {heading}</div>
+            <div style={{ color:"#334155", fontSize:13.5, whiteSpace:"pre-wrap" }}>{body}</div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function WelcomeScreen({ onStart }) {
+  return (
+    <div style={{ minHeight:"100vh", background:"linear-gradient(135deg,#0f172a 0%,#1e1b4b 50%,#0f172a 100%)", display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+      <div style={{ maxWidth:580, textAlign:"center", animation:"fadeIn 0.6s ease" }}>
+        <div style={{ width:64, height:64, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", borderRadius:18, display:"flex", alignItems:"center", justifyContent:"center", fontSize:30, margin:"0 auto 24px" }}>📋</div>
+        <h1 style={{ color:"#fff", fontSize:40, fontWeight:800, letterSpacing:"-0.03em", margin:"0 0 8px" }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></h1>
+        <p style={{ color:"#94a3b8", fontSize:18, marginBottom:40, lineHeight:1.6 }}>Track every application. Know exactly what skills to highlight for each role.</p>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr 1fr", gap:16, marginBottom:40 }}>
+          {[
+            { icon:"📄", title:"Upload Resume", desc:"PDF or DOCX — AI reads it automatically" },
+            { icon:"🤖", title:"AI Gap Analysis", desc:"Match score, skill gaps & ATS keywords" },
+            { icon:"🔗", title:"Job Board Links", desc:"Search Indeed, LinkedIn, Glassdoor & more" },
+          ].map(f => (
+            <div key={f.title} style={{ background:"rgba(255,255,255,0.05)", borderRadius:12, padding:"20px 16px", border:"1px solid rgba(255,255,255,0.1)" }}>
+              <div style={{ fontSize:24, marginBottom:8 }}>{f.icon}</div>
+              <div style={{ color:"#e2e8f0", fontWeight:700, fontSize:14, marginBottom:4 }}>{f.title}</div>
+              <div style={{ color:"#64748b", fontSize:12, lineHeight:1.5 }}>{f.desc}</div>
+            </div>
+          ))}
+        </div>
+        <button onClick={onStart} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", border:"none", borderRadius:12, padding:"16px 40px", fontWeight:700, fontSize:16, cursor:"pointer", boxShadow:"0 8px 32px rgba(99,102,241,0.4)" }}>
+          Get Started →
+        </button>
+        <p style={{ color:"#475569", fontSize:12, marginTop:16 }}>Free to use · Powered by Claude AI</p>
+      </div>
+    </div>
+  );
+}
+
+// PDF text extraction using PDF.js
+async function extractTextFromPDF(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const typedArray = new Uint8Array(e.target.result);
+        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        if (!pdfjsLib) {
+          // Fallback: return filename notice
+          resolve(`[PDF uploaded: ${file.name}]\n\nPaste your resume text manually below for AI analysis.`);
+          return;
+        }
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        const pdf = await pdfjsLib.getDocument(typedArray).promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          fullText += content.items.map(item => item.str).join(' ') + '\n';
+        }
+        resolve(fullText.trim());
+      } catch (err) {
+        resolve(`[PDF uploaded: ${file.name}]\n\nCould not auto-extract text. Please paste your resume text below.`);
+      }
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// DOCX text extraction (basic XML parsing)
+async function extractTextFromDOCX(file) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const JSZip = window.JSZip;
+        if (!JSZip) {
+          resolve(`[DOCX uploaded: ${file.name}]\n\nPaste your resume text manually below for AI analysis.`);
+          return;
+        }
+        const zip = await JSZip.loadAsync(e.target.result);
+        const xmlFile = zip.file('word/document.xml');
+        if (!xmlFile) throw new Error('No document.xml');
+        const xml = await xmlFile.async('string');
+        const text = xml
+          .replace(/<w:br[^/]\/>/g, '\n')
+          .replace(/<w:p[ >]/g, '\n')
+          .replace(/<[^>]+>/g, '')
+          .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"')
+          .replace(/\n{3,}/g, '\n\n').trim();
+        resolve(text);
+      } catch {
+        resolve(`[DOCX uploaded: ${file.name}]\n\nCould not auto-extract text. Please paste your resume text below.`);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+export default function App() {
+  const [showWelcome, setShowWelcome]     = useState(true);
+  const [jobs, setJobs]                   = useState([]);
+  const [selected, setSelected]           = useState(null);
+  const [loadingId, setLoadingId]         = useState(null);
+  const [showAdd, setShowAdd]             = useState(false);
+  const [resumeText, setResumeText]       = useState("");
+  const [editingResume, setEditingResume] = useState(false);
+  const [resumeFileName, setResumeFileName] = useState(null);
+  const [uploadingResume, setUploadingResume] = useState(false);
+  const [userName, setUserName]           = useState("Your Name");
+  const [editingName, setEditingName]     = useState(false);
+  const [newJob, setNewJob]               = useState({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
+  const [activeTab, setActiveTab]         = useState("tracker");
+  const [filterStatus, setFilterStatus]   = useState("All");
+  const [error, setError]                 = useState(null);
+  const fileInputRef                      = useRef(null);
+
+  const selectedJob = jobs.find(j => j.id === selected);
+  const hasResume   = resumeText.trim().length > 50;
+
+  const stats = {
+    total:        jobs.length,
+    applied:      jobs.filter(j => j.status==="Applied").length,
+    interviewing: jobs.filter(j => j.status==="Interviewing").length,
+    offers:       jobs.filter(j => j.status==="Offer").length,
+    avgScore:     jobs.length ? Math.round(jobs.reduce((a,j)=>a+(j.score||0),0)/jobs.length) : 0,
+  };
+
+  async function handleResumeUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingResume(true);
+    setError(null);
+    try {
+      let text = "";
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext === "pdf") {
+        text = await extractTextFromPDF(file);
+      } else if (ext === "docx") {
+        text = await extractTextFromDOCX(file);
+      } else if (ext === "txt") {
+        text = await file.text();
+      } else {
+        setError("Unsupported file type. Please upload PDF, DOCX, or TXT.");
+        setUploadingResume(false);
+        return;
+      }
+      setResumeText(text);
+      setResumeFileName(file.name);
+      setEditingResume(false);
+    } catch (err) {
+      setError("Failed to read file: " + err.message);
+    }
+    setUploadingResume(false);
+  }
+
+  async function runAnalysis(job) {
+    setLoadingId(job.id);
+    setError(null);
+    try {
+      const prompt = `You are a career coach and ATS expert. Analyze the fit between this resume and job description.
+
+RESUME:
+${resumeText}
+
+JOB: ${job.title} at ${job.company}
+JD: ${job.jd}
+
+Return ONLY this exact structure with ## headings:
+
+## Match Score
+X/100 — [one sentence overall assessment]
+
+## Strong Matches
+List 3–4 specific skills or experiences from the resume that directly match the JD.
+
+## Skill Gaps
+List 3–4 specific skills/tools/certifications in the JD that are missing or weak in the resume.
+
+## Keywords to Add
+List 5–8 exact keywords/phrases from the JD to add to the resume or cover letter. Comma-separated.
+
+## Top Recommendation
+One specific, actionable thing to do today to strengthen this application.`;
+
+      const res = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000, messages:[{ role:"user", content:prompt }] })
+      });
+      if (!res.ok) { const err = await res.json(); throw new Error(err.error || `HTTP ${res.status}`); }
+      const data = await res.json();
+      const text = data.content?.find(b=>b.type==="text")?.text || "Analysis unavailable.";
+      const scoreMatch = text.match(/(\d{2,3})\/100/);
+      const aiScore = scoreMatch ? parseInt(scoreMatch[1]) : job.score;
+      setJobs(prev => prev.map(j => j.id===job.id ? {...j, analysis:text, score:aiScore} : j));
+    } catch(e) { setError("AI analysis failed: " + e.message); }
+    setLoadingId(null);
+  }
+
+  function addJob() {
+    if (!newJob.company || !newJob.title) return;
+    const id = Date.now();
+    setJobs(prev => [...prev, { ...newJob, id, date:new Date().toISOString().slice(0,10), score:0, analysis:null }]);
+    setNewJob({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
+    setShowAdd(false);
+    setSelected(id);
+  }
+
+  const filtered = filterStatus==="All" ? jobs : jobs.filter(j=>j.status===filterStatus);
+  const inputStyle = { width:"100%", padding:"8px 12px", borderRadius:8, border:"1px solid #e2e8f0", fontSize:14, color:"#1e293b", background:"#fff", outline:"none", boxSizing:"border-box" };
+  const labelStyle = { fontSize:12, fontWeight:600, color:"#64748b", letterSpacing:"0.04em", textTransform:"uppercase", marginBottom:4, display:"block" };
+
+  if (showWelcome) return <WelcomeScreen onStart={() => setShowWelcome(false)} />;
+
+  return (
+    <div style={{ fontFamily:"'DM Sans', system-ui, sans-serif", background:"#f1f5f9", minHeight:"100vh" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
+        * { box-sizing:border-box; margin:0; padding:0; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+        .job-row:hover { background:#f0f4ff !important; }
+        .board-btn:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(0,0,0,0.15) !important; }
+        textarea:focus, input:focus, select:focus { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
+        ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+        .upload-zone:hover { border-color:#6366f1 !important; background:#f5f3ff !important; }
+      `}</style>
+
+      {/* NAV */}
+      <div style={{ background:"#0f172a", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:56, position:"sticky", top:0, zIndex:50 }}>
+        <div style={{ display:"flex", alignItems:"center", gap:10 }}>
+          <div style={{ width:30, height:30, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>📋</div>
+          <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></span>
+        </div>
+        <div style={{ display:"flex", gap:4 }}>
+          {[
+            { id:"tracker", label:"🗂 Tracker" },
+            { id:"boards",  label:"🔍 Job Boards" },
+            { id:"resume",  label:"📄 My Resume" },
+          ].map(tab => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              style={{ background:activeTab===tab.id?"#1e293b":"transparent", color:activeTab===tab.id?"#fff":"#94a3b8", border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:600, cursor:"pointer", position:"relative" }}>
+              {tab.label}
+              {tab.id==="resume" && !hasResume && <span style={{ marginLeft:5, background:"#ef4444", color:"#fff", borderRadius:10, padding:"1px 5px", fontSize:9, fontWeight:700, verticalAlign:"middle" }}>!</span>}
+            </button>
+          ))}
+        </div>
+        {editingName ? (
+          <input value={userName} onChange={e=>setUserName(e.target.value)}
+            onBlur={()=>setEditingName(false)} onKeyDown={e=>e.key==="Enter"&&setEditingName(false)}
+            autoFocus style={{ background:"rgba(255,255,255,0.1)", border:"1px solid rgba(255,255,255,0.2)", borderRadius:6, padding:"4px 10px", color:"#fff", fontSize:13, outline:"none", width:160 }} />
+        ) : (
+          <button onClick={()=>setEditingName(true)} style={{ background:"transparent", border:"none", color:"#94a3b8", fontSize:13, cursor:"pointer", borderRadius:6, padding:"4px 10px" }}>
+            {userName} ✎
+          </button>
+        )}
+      </div>
+
+      {/* ERROR BANNER */}
+      {error && (
+        <div style={{ background:"#fef2f2", borderBottom:"1px solid #fecaca", padding:"10px 32px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+          <span style={{ color:"#dc2626", fontSize:14 }}>⚠️ {error}</span>
+          <button onClick={()=>setError(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"#dc2626", fontSize:18 }}>✕</button>
+        </div>
+      )}
+
+      {/* ── JOB BOARDS TAB ── */}
+      {activeTab==="boards" && (
+        <div style={{ maxWidth:900, margin:"32px auto", padding:"0 24px" }}>
+          <div style={{ background:"#fff", borderRadius:16, padding:32, boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+            <h2 style={{ fontSize:20, fontWeight:700, color:"#0f172a", marginBottom:6 }}>Job Board Search</h2>
+            <p style={{ color:"#64748b", fontSize:14, marginBottom:28 }}>Open any platform below to search for roles. Find a job you like — copy the URL and JD, then add it to your tracker.</p>
+
+            <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:36 }}>
+              {JOB_BOARDS.map(board => (
+                <a key={board.name} href={board.url} target="_blank" rel="noopener noreferrer" className="board-btn"
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, background:"#f8fafc", borderRadius:12, padding:"20px 12px", textDecoration:"none", border:"1px solid #e2e8f0", transition:"all 0.2s", cursor:"pointer" }}>
+                  <div style={{ fontSize:28 }}>{board.icon}</div>
+                  <span style={{ color:"#1e293b", fontWeight:700, fontSize:13 }}>{board.name}</span>
+                  <span style={{ color:"#94a3b8", fontSize:11 }}>Search →</span>
+                </a>
+              ))}
+            </div>
+
+            {/* HOW TO ADD WORKFLOW */}
+            <div style={{ background:"#f0f9ff", borderRadius:12, padding:"20px 24px", border:"1px solid #bae6fd" }}>
+              <div style={{ fontWeight:700, fontSize:14, color:"#0369a1", marginBottom:12 }}>📋 How to add a job from any board</div>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:12 }}>
+                {[
+                  { step:"1", label:"Search", desc:"Click any board above and search for roles" },
+                  { step:"2", label:"Find a role", desc:"Click a job posting you're interested in" },
+                  { step:"3", label:"Copy JD", desc:"Select all text from the job description" },
+                  { step:"4", label:"Add to Tracker", desc:"Go to Tracker tab → + Add Job → paste everything" },
+                ].map(s => (
+                  <div key={s.step} style={{ textAlign:"center" }}>
+                    <div style={{ width:28, height:28, background:"#0369a1", borderRadius:"50%", color:"#fff", fontWeight:700, fontSize:13, display:"flex", alignItems:"center", justifyContent:"center", margin:"0 auto 8px" }}>{s.step}</div>
+                    <div style={{ fontWeight:700, fontSize:13, color:"#0f172a", marginBottom:4 }}>{s.label}</div>
+                    <div style={{ fontSize:12, color:"#64748b", lineHeight:1.4 }}>{s.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* QUICK ADD FROM URL */}
+            <div style={{ marginTop:24 }}>
+              <div style={{ fontWeight:700, fontSize:14, color:"#0f172a", marginBottom:10 }}>⚡ Quick Add from URL</div>
+              <div style={{ display:"flex", gap:10 }}>
+                <input placeholder="Paste job posting URL here (Indeed, LinkedIn, etc.)"
+                  style={{ ...inputStyle, flex:1 }}
+                  onKeyDown={e => {
+                    if (e.key === "Enter" && e.target.value) {
+                      const url = e.target.value;
+                      const source = JOB_BOARDS.find(b => url.includes(b.name.toLowerCase()))?.name || "Other";
+                      setNewJob(p => ({...p, url, source}));
+                      setShowAdd(true);
+                      e.target.value = "";
+                    }
+                  }} />
+                <button onClick={() => setShowAdd(true)}
+                  style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", border:"none", borderRadius:8, padding:"8px 20px", fontWeight:600, fontSize:13, cursor:"pointer", whiteSpace:"nowrap" }}>
+                  + Add Job
+                </button>
+              </div>
+              <p style={{ color:"#94a3b8", fontSize:12, marginTop:6 }}>Press Enter after pasting a URL to pre-fill the job form</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── RESUME TAB ── */}
+      {activeTab==="resume" && (
+        <div style={{ maxWidth:860, margin:"32px auto", padding:"0 24px" }}>
+          <div style={{ background:"#fff", borderRadius:16, padding:32, boxShadow:"0 1px 3px rgba(0,0,0,0.08)" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+              <div>
+                <h2 style={{ fontSize:20, fontWeight:700, color:"#0f172a" }}>My Resume</h2>
+                <p style={{ color:"#64748b", fontSize:14, marginTop:4 }}>Upload a file or paste text. Used for all AI gap analyses.</p>
+              </div>
+              <div style={{ display:"flex", gap:8 }}>
+                <button onClick={() => fileInputRef.current?.click()}
+                  style={{ background:"#f1f5f9", color:"#374151", border:"1px solid #e2e8f0", borderRadius:8, padding:"8px 16px", fontWeight:600, fontSize:13, cursor:"pointer", display:"flex", alignItems:"center", gap:6 }}>
+                  {uploadingResume ? <span style={{ display:"inline-block", width:14, height:14, border:"2px solid #6366f1", borderTopColor:"transparent", borderRadius:"50%", animation:"spin 0.6s linear infinite" }} /> : "📁"} Upload File
+                </button>
+                <input ref={fileInputRef} type="file" accept=".pdf,.docx,.txt" onChange={handleResumeUpload} style={{ display:"none" }} />
+                {resumeText && (
+                  <button onClick={() => setEditingResume(!editingResume)}
+                    style={{ background:editingResume?"#6366f1":"#f1f5f9", color:editingResume?"#fff":"#374151", border:"none", borderRadius:8, padding:"8px 16px", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                    {editingResume ? "✓ Save" : "✏️ Edit"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* UPLOAD ZONE */}
+            {!resumeText && (
+              <div className="upload-zone" onClick={() => fileInputRef.current?.click()}
+                style={{ border:"2px dashed #cbd5e1", borderRadius:12, padding:"48px 24px", textAlign:"center", cursor:"pointer", transition:"all 0.2s", marginBottom:20, background:"#fafafa" }}>
+                <div style={{ fontSize:40, marginBottom:12 }}>📄</div>
+                <div style={{ fontWeight:700, color:"#374151", fontSize:15, marginBottom:6 }}>Drop your resume here or click to upload</div>
+                <div style={{ color:"#94a3b8", fontSize:13 }}>Supports PDF, DOCX, and TXT files</div>
+                {uploadingResume && <div style={{ marginTop:12, color:"#6366f1", fontSize:13, fontWeight:600 }}>Reading file...</div>}
+              </div>
+            )}
+
+            {resumeFileName && (
+              <div style={{ background:"#f0fdf4", borderRadius:8, padding:"10px 16px", marginBottom:16, display:"flex", alignItems:"center", justifyContent:"space-between", border:"1px solid #bbf7d0" }}>
+                <span style={{ color:"#166534", fontSize:13, fontWeight:600 }}>✅ {resumeFileName}</span>
+                <button onClick={() => { setResumeText(""); setResumeFileName(null); }}
+                  style={{ background:"none", border:"none", color:"#94a3b8", cursor:"pointer", fontSize:16 }}>✕</button>
+              </div>
+            )}
+
+            {resumeText && (
+              <>
+                {!hasResume && (
+                  <div style={{ background:"#eff6ff", borderRadius:10, padding:"14px 16px", marginBottom:16, border:"1px solid #bfdbfe" }}>
+                    <p style={{ color:"#1d4ed8", fontSize:13 }}>👋 Resume loaded! Add more detail (skills, experience, projects) for better AI analysis.</p>
+                  </div>
+                )}
+                {editingResume ? (
+                  <textarea value={resumeText} onChange={e=>setResumeText(e.target.value)}
+                    style={{ ...inputStyle, minHeight:400, fontFamily:"'DM Mono',monospace", fontSize:13, lineHeight:1.7, resize:"vertical" }} />
+                ) : (
+                  <pre style={{ background:"#f8fafc", borderRadius:10, padding:20, fontSize:13, fontFamily:"'DM Mono',monospace", lineHeight:1.7, color:"#334155", whiteSpace:"pre-wrap", wordBreak:"break-word", border:"1px solid #e2e8f0", maxHeight:500, overflowY:"auto" }}>{resumeText}</pre>
+                )}
+              </>
+            )}
+
+            {!resumeText && (
+              <div style={{ marginTop:8 }}>
+                <div style={{ fontSize:12, fontWeight:600, color:"#64748b", marginBottom:6, textTransform:"uppercase", letterSpacing:"0.04em" }}>Or paste resume text directly</div>
+                <textarea value={resumeText} onChange={e=>setResumeText(e.target.value)}
+                  placeholder={"Paste your resume text here...\n\nSKILLS: SQL, Power BI, Agile, JIRA...\nEXPERIENCE:\n- Company (dates): Role description...\nPROJECTS: Project name — tools, outcomes..."}
+                  style={{ ...inputStyle, minHeight:200, fontFamily:"'DM Mono',monospace", fontSize:13, lineHeight:1.7, resize:"vertical" }} />
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TRACKER TAB ── */}
+      {activeTab==="tracker" && (
+        <div style={{ maxWidth:1280, margin:"0 auto", padding:"24px" }}>
+          {/* STATS */}
+          <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:24 }}>
+            {[
+              { label:"Total Jobs",   value:stats.total,        icon:"📋", color:"#6366f1" },
+              { label:"Applied",      value:stats.applied,      icon:"📤", color:"#3b82f6" },
+              { label:"Interviewing", value:stats.interviewing, icon:"💬", color:"#7c3aed" },
+              { label:"Offers",       value:stats.offers,       icon:"🎉", color:"#10b981" },
+              { label:"Avg Match",    value:stats.avgScore+"%", icon:"🎯", color:"#f59e0b" },
+            ].map(s => (
+              <div key={s.label} style={{ background:"#fff", borderRadius:12, padding:"16px 20px", boxShadow:"0 1px 3px rgba(0,0,0,0.06)", borderTop:`3px solid ${s.color}` }}>
+                <div style={{ fontSize:20, marginBottom:6 }}>{s.icon}</div>
+                <div style={{ fontSize:26, fontWeight:800, color:"#0f172a", lineHeight:1 }}>{s.value}</div>
+                <div style={{ fontSize:12, color:"#64748b", marginTop:4, fontWeight:500 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+
+          <div style={{ display:"grid", gridTemplateColumns:"400px 1fr", gap:20, alignItems:"start" }}>
+            {/* JOB LIST */}
+            <div>
+              <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:12 }}>
+                <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
+                  style={{ ...inputStyle, width:"auto", fontSize:13, padding:"6px 12px" }}>
+                  <option>All</option>
+                  {STATUSES.map(s=><option key={s}>{s}</option>)}
+                </select>
+                <button onClick={()=>setShowAdd(true)}
+                  style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", border:"none", borderRadius:8, padding:"8px 16px", fontWeight:600, fontSize:13, cursor:"pointer" }}>
+                  + Add Job
+                </button>
+              </div>
+
+              {jobs.length===0 ? (
+                <div style={{ background:"#fff", borderRadius:16, padding:"48px 32px", textAlign:"center", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize:48, marginBottom:16 }}>🎯</div>
+                  <h3 style={{ color:"#0f172a", fontSize:17, fontWeight:700, marginBottom:8 }}>Start tracking your search</h3>
+                  <p style={{ color:"#64748b", fontSize:14, marginBottom:16, lineHeight:1.6 }}>Browse job boards, find a role you like, and add it here for AI analysis.</p>
+                  <div style={{ display:"flex", gap:8, justifyContent:"center", flexWrap:"wrap" }}>
+                    <button onClick={()=>setActiveTab("boards")} style={{ background:"#f1f5f9", color:"#374151", border:"none", borderRadius:8, padding:"10px 18px", fontWeight:600, fontSize:13, cursor:"pointer" }}>🔍 Browse Job Boards</button>
+                    <button onClick={()=>setShowAdd(true)} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)", color:"#fff", border:"none", borderRadius:8, padding:"10px 18px", fontWeight:600, fontSize:13, cursor:"pointer" }}>+ Add Job Manually</button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display:"flex", flexDirection:"column", gap:8 }}>
+                  {filtered.map(job => (
+                    <div key={job.id} className="job-row" onClick={()=>setSelected(job.id)}
+                      style={{ background:selected===job.id?"#eef2ff":"#fff", border:selected===job.id?"2px solid #6366f1":"2px solid transparent", borderRadius:12, padding:"14px 16px", cursor:"pointer", transition:"all 0.15s", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:6 }}>
+                        <div>
+                          <div style={{ fontWeight:700, fontSize:14, color:"#0f172a" }}>{job.title}</div>
+                          <div style={{ fontSize:12, color:"#64748b", marginTop:2 }}>
+                            {job.company} · {job.location}
+                            {job.source && <span style={{ marginLeft:6, background:"#eff6ff", color:"#2563eb", borderRadius:4, padding:"1px 6px", fontSize:10, fontWeight:600 }}>{job.source}</span>}
+                          </div>
+                        </div>
+                        {job.score>0 && <ScoreBadge score={job.score} />}
+                      </div>
+                      <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center" }}>
+                        <StatusBadge status={job.status} />
+                        <span style={{ fontSize:11, color:"#94a3b8" }}>{job.date}</span>
+                      </div>
+                      {job.analysis && <div style={{ marginTop:6, fontSize:11, color:"#6366f1", fontWeight:600 }}>✓ Analysis complete</div>}
+                    </div>
+                  ))}
+                  {filtered.length===0 && jobs.length>0 && (
+                    <div style={{ textAlign:"center", padding:"40px 20px", color:"#94a3b8", fontSize:14 }}>No jobs with status "{filterStatus}".</div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* DETAIL PANEL */}
+            <div>
+              {selectedJob ? (
+                <div style={{ background:"#fff", borderRadius:16, boxShadow:"0 1px 3px rgba(0,0,0,0.08)", overflow:"hidden", animation:"fadeIn 0.2s ease" }}>
+                  <div style={{ background:"linear-gradient(135deg,#0f172a,#1e293b)", padding:"24px 28px" }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start" }}>
+                      <div>
+                        <h2 style={{ color:"#fff", fontSize:20, fontWeight:800 }}>{selectedJob.title}</h2>
+                        <div style={{ color:"#94a3b8", fontSize:14, marginTop:4 }}>
+                          {selectedJob.company} · {selectedJob.location}
+                          {selectedJob.source && <span style={{ marginLeft:8, background:"rgba(255,255,255,0.1)", color:"#94a3b8", borderRadius:4, padding:"1px 8px", fontSize:11 }}>{selectedJob.source}</span>}
+                        </div>
+                        {selectedJob.salary && <div style={{ color:"#818cf8", fontSize:13, marginTop:4, fontWeight:600 }}>{selectedJob.salary}</div>}
+                      </div>
+                      <div style={{ display:"flex", gap:8 }}>
+                        {selectedJob.url && (
+                          <a href={selectedJob.url} target="_blank" rel="noopener noreferrer"
+                            style={{ background:"rgba(255,255,255,0.1)", color:"#fff", borderRadius:8, padding:"7px 14px", fontSize:12, fontWeight:600, textDecoration:"none", border:"1px solid rgba(255,255,255,0.15)" }}>
+                            Apply →
+                          </a>
+                        )}
+                        <button onClick={()=>{ setJobs(p=>p.filter(j=>j.id!==selectedJob.id)); setSelected(null); }}
+                          style={{ background:"rgba(255,255,255,0.05)", color:"#94a3b8", border:"1px solid rgba(255,255,255,0.1)", borderRadius:8, padding:"7px 10px", fontSize:13, cursor:"pointer" }}>🗑</button>
+                      </div>
+                    </div>
+                    <div style={{ display:"flex", gap:6, marginTop:16, flexWrap:"wrap" }}>
+                      {STATUSES.map(s => (
+                        <button key={s} onClick={()=>setJobs(p=>p.map(j=>j.id===selectedJob.id?{...j,status:s}:j))}
+                          style={{ background:selectedJob.status===s?"#6366f1":"rgba(255,255,255,0.08)", color:selectedJob.status===s?"#fff":"#94a3b8", border:"none", borderRadius:20, padding:"4px 12px", fontSize:12, fontWeight:600, cursor:"pointer", transition:"all 0.15s" }}>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div style={{ padding:"24px 28px" }}>
+                    <div style={{ marginBottom:24 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color:"#6366f1", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:8 }}>Job Description</div>
+                      <div style={{ background:"#f8fafc", borderRadius:10, padding:"14px 16px", fontSize:13, color:"#475569", lineHeight:1.7, border:"1px solid #e2e8f0", maxHeight:120, overflowY:"auto" }}>
+                        {selectedJob.jd || <span style={{ color:"#94a3b8", fontStyle:"italic" }}>No JD added.</span>}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:11, fontWeight:700, color:"#6366f1", letterSpacing:"0.06em", textTransform:"uppercase", marginBottom:12 }}>AI Gap Analysis</div>
+                      <AnalysisPanel analysis={selectedJob.analysis} loading={loadingId===selectedJob.id} onRun={()=>runAnalysis(selectedJob)} jobTitle={selectedJob.title} company={selectedJob.company} hasResume={hasResume} />
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ background:"#fff", borderRadius:16, padding:"60px 32px", textAlign:"center", boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize:48, marginBottom:16 }}>👈</div>
+                  <div style={{ color:"#64748b", fontSize:15 }}>Select a job to see details and run AI analysis.</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD JOB MODAL */}
+      {showAdd && (
+        <div style={{ position:"fixed", inset:0, background:"rgba(0,0,0,0.5)", zIndex:100, display:"flex", alignItems:"center", justifyContent:"center", padding:24 }}>
+          <div style={{ background:"#fff", borderRadius:16, padding:32, width:"100%", maxWidth:540, maxHeight:"90vh", overflowY:"auto", animation:"fadeIn 0.2s ease" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:24 }}>
+              <h3 style={{ fontSize:18, fontWeight:800, color:"#0f172a" }}>Add New Job</h3>
+              <button onClick={()=>setShowAdd(false)} style={{ background:"#f1f5f9", border:"none", borderRadius:8, width:32, height:32, cursor:"pointer", fontSize:16 }}>✕</button>
+            </div>
+
+            {/* SOURCE SELECTOR */}
+            <div style={{ marginBottom:16 }}>
+              <label style={labelStyle}>Source Platform</label>
+              <div style={{ display:"flex", gap:8, flexWrap:"wrap" }}>
+                {["Indeed","LinkedIn","Glassdoor","Dice","Wellfound","Other"].map(s => (
+                  <button key={s} onClick={()=>setNewJob(p=>({...p,source:s}))}
+                    style={{ background:newJob.source===s?"#6366f1":"#f1f5f9", color:newJob.source===s?"#fff":"#374151", border:"none", borderRadius:6, padding:"5px 12px", fontSize:12, fontWeight:600, cursor:"pointer" }}>
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ display:"flex", flexDirection:"column", gap:14 }}>
+              {[
+                { label:"Company *",    key:"company",  placeholder:"e.g. Azra AI" },
+                { label:"Job Title *",  key:"title",    placeholder:"e.g. Product Analyst" },
+                { label:"Location",     key:"location", placeholder:"Remote" },
+                { label:"Salary Range", key:"salary",   placeholder:"e.g. $90,000–$110,000" },
+                { label:"Apply URL",    key:"url",      placeholder:"https://..." },
+              ].map(f => (
+                <div key={f.key}>
+                  <label style={labelStyle}>{f.label}</label>
+                  <input value={newJob[f.key]} onChange={e=>setNewJob(p=>({...p,[f.key]:e.target.value}))} placeholder={f.placeholder} style={inputStyle} />
+                </div>
+              ))}
+              <div>
+                <label style={labelStyle}>Status</label>
+                <select value={newJob.status} onChange={e=>setNewJob(p=>({...p,status:e.target.value}))} style={inputStyle}>
+                  {STATUSES.map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={labelStyle}>Job Description <span style={{ color:"#94a3b8", fontWeight:400, textTransform:"none", fontSize:11 }}>— paste for AI analysis</span></label>
+                <textarea value={newJob.jd} onChange={e=>setNewJob(p=>({...p,jd:e.target.value}))}
+                  placeholder="Paste the full job description here for best AI analysis results..."
+                  style={{ ...inputStyle, minHeight:120, resize:"vertical" }} />
+              </div>
+              <div style={{ display:"flex", gap:10, marginTop:4 }}>
+                <button onClick={()=>setShowAdd(false)} style={{ flex:1, background:"#f1f5f9", color:"#374151", border:"none", borderRadius:8, padding:10, fontWeight:600, fontSize:14, cursor:"pointer" }}>Cancel</button>
+                <button onClick={addJob} disabled={!newJob.company||!newJob.title}
+                  style={{ flex:2, background:(!newJob.company||!newJob.title)?"#e2e8f0":"linear-gradient(135deg,#6366f1,#8b5cf6)", color:(!newJob.company||!newJob.title)?"#94a3b8":"#fff", border:"none", borderRadius:8, padding:10, fontWeight:600, fontSize:14, cursor:(!newJob.company||!newJob.title)?"not-allowed":"pointer" }}>
+                  Add Job
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
