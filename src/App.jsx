@@ -308,7 +308,7 @@ function buildPrompt(resume, title, company, jd) {
 
 export default function App() {
   const [user, setUser]                   = useState(null);
-  const [jobs, setJobs]                   = useState([]);
+  const [jobs, setJobs]                   = useState(() => { try { const j = localStorage.getItem('jt_jobs'); return j ? JSON.parse(j) : []; } catch { return []; } });
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
@@ -322,6 +322,9 @@ export default function App() {
   const [filterStatus, setFilterStatus]   = useState("All");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
+
+  useEffect(() => { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }, [jobs]);
+  useEffect(() => { try { localStorage.setItem('jt_username', userName); } catch {} }, [userName]);
 
   const selectedJob = jobs.find(j => j.id === selected);
   const hasResume   = resumeText.trim().length > 50;
@@ -366,6 +369,15 @@ export default function App() {
       setJobs(prev=>prev.map(j=>j.id===job.id?{...j,analysis:text,score:scoreMatch?parseInt(scoreMatch[1]):job.score}:j));
     } catch(e) { setError("AI analysis failed: "+e.message); }
     setLoadingId(null);
+  }
+
+  function downloadCSV() {
+    const headers = ['Title','Company','Location','Salary','Status','Score','Date','Source','URL'];
+    const rows = jobs.map(j=>[j.title||'',j.company||'',j.location||'',j.salary||'',j.status||'',j.score||0,j.date||'',j.source||'',j.url||'']);
+    const csv = [headers,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const blob = new Blob([csv],{type:'text/csv'});
+    const a = document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='jobtrack-pipeline.csv'; a.click();
   }
 
   function addJob() {
