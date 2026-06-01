@@ -308,7 +308,7 @@ function buildPrompt(resume, title, company, jd) {
 
 export default function App() {
   const [user, setUser]                   = useState(null);
-  const [jobs, setJobs]                   = useState([]);
+  const [jobs, setJobs]                   = useState(() => { try { const s=localStorage.getItem('jt_jobs'); return s?JSON.parse(s):[]; } catch(e){ return []; } });
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
@@ -362,10 +362,23 @@ export default function App() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error||`HTTP ${res.status}`); }
       const data = await res.json();
       const text = data.content?.find(b=>b.type==="text")?.text || "Analysis unavailable.";
-      const scoreMatch = text.match(/(\d{2,3})\/100/);
+      const scoreMatch = text.match(/(\d{1,3})[\/]100/) || text.match(/score[:\s]+(\d{1,3})/i);
       setJobs(prev=>prev.map(j=>j.id===job.id?{...j,analysis:text,score:scoreMatch?parseInt(scoreMatch[1]):job.score}:j));
     } catch(e) { setError("AI analysis failed: "+e.message); }
     setLoadingId(null);
+  }
+
+  useEffect(() => { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }, [jobs]);
+
+  function downloadCSV() {
+    if (!jobs.length) return;
+    const h = ['Title','Company','Location','Salary','Status','Score','Date','Source','URL'];
+    const rows = jobs.map(j=>[j.title||'',j.company||'',j.location||'',j.salary||'',j.status||'',j.score||0,j.date||'',j.source||'',j.url||'']);
+    const csv = [h,...rows].map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv,' + encodeURIComponent(csv);
+    a.download = 'jobtrack-pipeline.csv';
+    a.click();
   }
 
   function addJob() {
@@ -524,6 +537,7 @@ export default function App() {
                   <option>All</option>{STATUSES.map(s=><option key={s}>{s}</option>)}
                 </select>
                 <button onClick={()=>setShowAdd(true)} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontWeight:600,fontSize:13,cursor:"pointer" }}>+ Add Job</button>
+                <button onClick={downloadCSV} disabled={!jobs.length} style={{background:"#f1f5f9",color:"#374151",border:"1px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,fontWeight:600,cursor:jobs.length?"pointer":"not-allowed",opacity:jobs.length?1:0.4}}>⬇ CSV</button>
               </div>
               {jobs.length===0
                 ? <div style={{ background:"#fff",borderRadius:16,padding:"48px 32px",textAlign:"center",boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
