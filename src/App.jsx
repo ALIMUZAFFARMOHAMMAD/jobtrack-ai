@@ -395,7 +395,7 @@ export default function App() {
 
   if (!user) return <AuthScreen onAuth={u => setUser(u)} />;
 
-  const filtered = filterStatus==="All"?jobs:jobs.filter(j=>j.status===filterStatus);
+  const filtered = (filterStatus==="All"?jobs:jobs.filter(j=>j.status===filterStatus)).slice().sort((a,b)=>(b.score||0)-(a.score||0));
   const inputStyle = {width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:14,color:"#1e293b",background:"#fff",outline:"none",boxSizing:"border-box"};
   const labelStyle = {fontSize:12,fontWeight:600,color:"#64748b",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:4,display:"block"};
 
