@@ -254,7 +254,7 @@ async function extractTextFromPDF(file) {
     reader.onload = async (e) => {
       try {
         const typedArray = new Uint8Array(e.target.result);
-        const pdfjsLib = window['pdfjs-dist/build/pdf'];
+        const pdfjsLib = window['pdfjs-dist' + '/build/pdf'];
         if (!pdfjsLib) { resolve(`[PDF: ${file.name}]\n\nPaste resume text manually.`); return; }
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
         const pdf = await pdfjsLib.getDocument(typedArray).promise;
