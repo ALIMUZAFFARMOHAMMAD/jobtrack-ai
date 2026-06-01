@@ -290,6 +290,23 @@ async function extractTextFromDOCX(file) {
   });
 }
 
+function buildPrompt(resume, title, company, jd) {
+  const parts = [
+    'You are a career coach and ATS expert. Analyze the fit between this resume and job description.',
+    '', 'RESUME:', resume, '',
+    'JOB: ' + title + ' at ' + company,
+    'JD: ' + jd, '',
+    'Return ONLY this exact structure with ## headings:', '',
+    '## Match Score', 'X out of 100 with one sentence assessment.', '',
+    '## Strong Matches', 'List 3-4 skills from resume matching JD.', '',
+    '## Skill Gaps', 'List 3-4 skills in JD missing from resume.', '',
+    '## Keywords to Add', 'List 5-8 exact JD keywords. Comma-separated.', '',
+    '## Top Recommendation', 'One actionable thing to do today.'
+  ];
+  return parts.join("
+");
+}
+
 export default function App() {
   const [user, setUser]                   = useState(null);
   const [jobs, setJobs]                   = useState([]);
@@ -340,7 +357,7 @@ export default function App() {
       const res = await fetch("/api/analyze", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
-          messages:[{ role:"user", content:`You are a career coach and ATS expert. Analyze the fit between this resume and job description.\n\nRESUME:\n${resumeText}\n\nJOB: ${job.title} at ${job.company}\nJD: ${job.jd}\n\nReturn ONLY this exact structure with ## headings:\n\n## Match Score\nX/100 — [one sentence overall assessment]\n\n## Strong Matches\nList 3–4 specific skills or experiences from the resume that directly match the JD.\n\n## Skill Gaps\nList 3–4 specific skills/tools/certifications in the JD that are missing or weak in the resume.\n\n## Keywords to Add\nList 5–8 exact keywords/phrases from the JD to add to the resume or cover letter. Comma-separated.\n\n## Top Recommendation\nOne specific, actionable thing to do today to strengthen this application.` }]
+          messages:[{ role:"user", content:buildPrompt(resumeText, job.title, job.company, job.jd) }]
         })
       });
       if (!res.ok) { const err = await res.json(); throw new Error(err.error||`HTTP ${res.status}`); }
