@@ -355,7 +355,7 @@ export default function App() {
     try {
       const res = await fetch("/api/analyze", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({ model:"claude-sonnet-4-20250514", max_tokens:1000,
+        body:JSON.stringify({ model:"claude-sonnet-4-5", max_tokens:1000,
           messages:[{ role:"user", content:buildPrompt(resumeText, job.title, job.company, job.jd) }]
         })
       });
