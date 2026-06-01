@@ -308,7 +308,7 @@ function buildPrompt(resume, title, company, jd) {
 
 export default function App() {
   const [user, setUser]                   = useState(null);
-  const [jobs, setJobs]                   = useState(() => { try { const s=localStorage.getItem('jt_jobs'); return s?JSON.parse(s):[]; } catch(e){ return []; } });
+  const [jobs, setJobs]                   = useState([]);
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
