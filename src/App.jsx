@@ -372,9 +372,7 @@ export default function App() {
     setLoadingId(null);
   }
 
-  useEffect(() => {
-    if (jobs.length > 0) { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }
-  }, [jobs]);
+
 
   function buildSmartPrompt(resume, title) {
     return 'You are a career coach. Resume:\n' + resume + '\n\nGenerate 6 job variations for "' + title + '". Mix locations: Remote, NYC, Chicago, Austin, Seattle. Return ONLY a JSON array:\n[{"title":"...","company":"...","location":"Remote","salary":"$X-$Y","score":85,"match_reason":"one sentence","gap":"one skill","apply_url":"https://www.indeed.com/jobs?q=' + encodeURIComponent(title) + '","jd":"3-4 sentence realistic job description"}]\nSort by score descending. No other text.';
