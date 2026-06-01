@@ -281,7 +281,7 @@ async function extractTextFromDOCX(file) {
         const zip = await JSZip.loadAsync(e.target.result);
         const xml = await zip.file('word/document.xml')?.async('string');
         if (!xml) throw new Error('No document.xml');
-        const text = xml.replace(/<w:br[^/]\/>/g,'\n').replace(/<w:p[ >]/g,'\n').replace(/<[^>]+>/g,'')
+        const text = xml.replace(/<w:br\/>/g,'\n').replace(/<w:p /g,'\n').replace(/<[^>]+>/g,'')
           .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\n{3,}/g,'\n\n').trim();
         resolve(text);
       } catch { resolve(`[DOCX: ${file.name}]\n\nCould not extract. Please paste manually.`); }
