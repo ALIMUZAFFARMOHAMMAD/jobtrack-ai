@@ -368,7 +368,11 @@ export default function App() {
     setLoadingId(null);
   }
 
-  useEffect(() => { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }, [jobs]);
+  const isFirstRender = useRef(true);
+  useEffect(() => {
+    if (isFirstRender.current) { isFirstRender.current = false; return; }
+    try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {}
+  }, [jobs]);
 
   function downloadCSV() {
     if (!jobs.length) return;
