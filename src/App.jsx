@@ -191,7 +191,7 @@ function AuthScreen({ onAuth }) {
           <div style={{ fontFamily:"'DM Sans',sans-serif", fontWeight:800, fontSize:22, color:"#fff" }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></div>
           <div style={{ color:"#64748b", fontSize:14, marginTop:4 }}>Your AI-powered job search companion</div>
         </div>
-        <div style={{ background:"#fff", borderRadius:20, padding:"36px 32px", boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }}></div>
+        <div style={{ background:"#fff", borderRadius:20, padding:"36px 32px", boxShadow:"0 24px 64px rgba(0,0,0,0.4)" }}>
         {step === "signup" ? (
             <>
               <h2 style={{ fontFamily:"'DM Sans',sans-serif", fontSize:22, fontWeight:800, color:"#0f172a", marginBottom:6 }}>Get started free</h2>
@@ -303,8 +303,7 @@ function buildPrompt(resume, title, company, jd) {
     '## Keywords to Add', 'List 5-8 exact JD keywords. Comma-separated.', '',
     '## Top Recommendation', 'One actionable thing to do today.'
   ];
-  return parts.join("
-");
+  return parts.join('\n');
 }
 
 export default function App() {
