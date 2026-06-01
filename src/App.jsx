@@ -321,6 +321,9 @@ export default function App() {
   const [newJob, setNewJob]               = useState({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
   const [activeTab, setActiveTab]         = useState("tracker");
   const [filterStatus, setFilterStatus]   = useState("All");
+  const [smartSearch, setSmartSearch]     = useState("");
+  const [smartResults, setSmartResults]   = useState([]);
+  const [smartLoading, setSmartLoading]   = useState(false);
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
 
@@ -372,6 +375,24 @@ export default function App() {
   useEffect(() => {
     if (jobs.length > 0) { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }
   }, [jobs]);
+
+  function buildSmartPrompt(resume, title) {
+    return 'You are a career coach. Resume:\n' + resume + '\n\nGenerate 6 job variations for "' + title + '". Mix locations: Remote, NYC, Chicago, Austin, Seattle. Return ONLY a JSON array:\n[{"title":"...","company":"...","location":"Remote","salary":"$X-$Y","score":85,"match_reason":"one sentence","gap":"one skill","apply_url":"https://www.indeed.com/jobs?q=' + encodeURIComponent(title) + '","jd":"3-4 sentence realistic job description"}]\nSort by score descending. No other text.';
+  }
+
+  async function runSmartSearch() {
+    if (!smartSearch.trim() || !hasResume) { setError(!hasResume ? "Add your resume first!" : ""); return; }
+    setSmartLoading(true); setSmartResults([]);
+    try {
+      const res = await fetch("/api/analyze", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ model:"claude-sonnet-4-5", max_tokens:1500, messages:[{role:"user",content:buildSmartPrompt(resumeText,smartSearch)}] }) });
+      const data = await res.json();
+      const text = data.content?.find(b=>b.type==="text")?.text || "";
+      const m = text.match(/\[[\s\S]*\]/);
+      if (m) setSmartResults(JSON.parse(m[0]));
+      else setError("Could not parse results, try again.");
+    } catch(e) { setError("Search failed: "+e.message); }
+    setSmartLoading(false);
+  }
 
   function downloadCSV() {
     if (!jobs.length) return;
@@ -548,6 +569,40 @@ export default function App() {
                 </select>
                 <button onClick={()=>setShowAdd(true)} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontWeight:600,fontSize:13,cursor:"pointer" }}>+ Add Job</button>
                 <button onClick={downloadCSV} disabled={!jobs.length} style={{background:"#f1f5f9",color:"#374151",border:"1px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,fontWeight:600,cursor:jobs.length?"pointer":"not-allowed",opacity:jobs.length?1:0.4}}>⬇ CSV</button>
+              </div>
+              <div style={{background:"#fff",borderRadius:12,padding:16,marginBottom:12,boxShadow:"0 1px 3px rgba(0,0,0,0.06)",border:"1px solid #e2e8f0"}}>
+                <div style={{fontSize:12,fontWeight:700,color:"#6366f1",letterSpacing:"0.06em",textTransform:"uppercase",marginBottom:8}}>✨ Smart Job Search</div>
+                <div style={{display:"flex",gap:8}}>
+                  <input value={smartSearch} onChange={e=>setSmartSearch(e.target.value)} onKeyDown={e=>e.key==="Enter"&&runSmartSearch()} placeholder="Type a job title e.g. Product Manager..." style={{flex:1,padding:"8px 12px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:13,outline:"none"}}/>
+                  <button onClick={runSmartSearch} disabled={smartLoading||!smartSearch.trim()||!hasResume} style={{background:smartLoading||!smartSearch.trim()||!hasResume?"#e2e8f0":"linear-gradient(135deg,#6366f1,#8b5cf6)",color:smartLoading||!smartSearch.trim()||!hasResume?"#94a3b8":"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontWeight:600,fontSize:13,cursor:"pointer",whiteSpace:"nowrap"}}>
+                    {smartLoading?"Searching...":"🔍 Search"}
+                  </button>
+                </div>
+                {!hasResume&&<p style={{color:"#f59e0b",fontSize:11,marginTop:6}}>⚠️ Add your resume in My Resume tab first</p>}
+                {smartResults.length>0&&(
+                  <div style={{marginTop:12}}>
+                    <div style={{fontSize:11,fontWeight:700,color:"#64748b",marginBottom:8,textTransform:"uppercase",letterSpacing:"0.04em"}}>Ranked by match — click to add to tracker</div>
+                    <div style={{display:"flex",flexDirection:"column",gap:6,maxHeight:280,overflowY:"auto"}}>
+                      {smartResults.map((r,i)=>(
+                        <div key={i} onClick={()=>{setNewJob({company:r.company,title:r.title,location:r.location||"Remote",salary:r.salary||"",status:"Saved",url:r.apply_url||"",source:"Smart Search",jd:r.jd||""});setShowAdd(true);}}
+                          style={{background:"#f8fafc",borderRadius:8,padding:"10px 12px",cursor:"pointer",border:"1px solid #e2e8f0",display:"flex",justifyContent:"space-between",alignItems:"center",transition:"all 0.15s",animation:`fadeIn 0.3s ease ${i*0.06}s both`}}
+                          onMouseEnter={e=>e.currentTarget.style.background="#eef2ff"}
+                          onMouseLeave={e=>e.currentTarget.style.background="#f8fafc"}>
+                          <div>
+                            <div style={{fontWeight:700,fontSize:13,color:"#0f172a"}}>{r.title}</div>
+                            <div style={{fontSize:11,color:"#64748b",marginTop:2}}>{r.company} · {r.location} · {r.salary}</div>
+                            <div style={{fontSize:11,color:"#10b981",marginTop:2}}>✅ {r.match_reason}</div>
+                            <div style={{fontSize:11,color:"#f59e0b",marginTop:1}}>⚠️ Gap: {r.gap}</div>
+                          </div>
+                          <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:4,flexShrink:0,marginLeft:12}}>
+                            <div style={{background:r.score>=80?"#ecfdf5":r.score>=65?"#fffbeb":"#fef2f2",color:r.score>=80?"#10b981":r.score>=65?"#f59e0b":"#ef4444",borderRadius:20,padding:"2px 10px",fontWeight:700,fontSize:13}}>{r.score}</div>
+                            <div style={{fontSize:9,color:"#6366f1",fontWeight:700}}>+ ADD</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
               {jobs.length===0
                 ? <div style={{ background:"#fff",borderRadius:16,padding:"48px 32px",textAlign:"center",boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
