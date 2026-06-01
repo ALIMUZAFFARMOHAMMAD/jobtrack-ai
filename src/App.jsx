@@ -36,9 +36,10 @@ async function sendOTPEmail(email, otp, name) {
 function ScoreBadge({ score }) {
   const color = score >= 80 ? "#10b981" : score >= 65 ? "#f59e0b" : "#ef4444";
   const bg    = score >= 80 ? "#ecfdf5" : score >= 65 ? "#fffbeb" : "#fef2f2";
+  const label = score>=80?"Strong":score>=65?"Good":"Weak";
   return (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:4, background:bg, color, borderRadius:20, padding:"2px 10px", fontWeight:700, fontSize:13 }}>
-      <span style={{ fontSize:9 }}>●</span> {score}
+    <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:bg, color, borderRadius:20, padding:"3px 12px", fontWeight:700, fontSize:12, animation:"scoreReveal 0.4s ease both", border:`1px solid ${color}33` }}>
+      <span style={{ fontSize:8 }}>●</span> {score} <span style={{fontSize:10,opacity:0.75}}>{label}</span>
     </div>
   );
 }
@@ -57,7 +58,7 @@ function AnalysisPanel({ analysis, loading, onRun, jobTitle, company, hasResume 
   );
   if (loading) return (
     <div style={{ padding:"32px 0", textAlign:"center" }}>
-      <div style={{ display:"inline-block", width:28, height:28, border:"3px solid #e2e8f0", borderTopColor:"#6366f1", borderRadius:"50%", animation:"spin 0.8s linear infinite" }} />
+      <div style={{ position:"relative", width:44, height:44, margin:"0 auto 12px" }}><div style={{ position:"absolute", inset:0, border:"3px solid #e2e8f0", borderRadius:"50%" }}/><div style={{ position:"absolute", inset:0, border:"3px solid transparent", borderTopColor:"#6366f1", borderRightColor:"#8b5cf6", borderRadius:"50%", animation:"spin 0.7s linear infinite" }}/><div style={{ position:"absolute", inset:8, border:"2px solid transparent", borderTopColor:"#a78bfa", borderRadius:"50%", animation:"spin 0.4s linear infinite reverse" }}/></div>
       <p style={{ marginTop:12, color:"#64748b", fontSize:14 }}>Analyzing your fit for this role...</p>
     </div>
   );
@@ -81,7 +82,7 @@ function AnalysisPanel({ analysis, loading, onRun, jobTitle, company, hasResume 
         const icon = Object.entries(icons).find(([k]) => heading.includes(k))?.[1] || "📌";
         const isFirst = i===0, isLast = i===sections.length-1;
         return (
-          <div key={i} style={{ marginBottom:16, background:isFirst?"linear-gradient(135deg,#f0fdf4,#dcfce7)":isLast?"#fffbeb":"#f8fafc", borderRadius:10, padding:"14px 16px", border:`1px solid ${isFirst?"#bbf7d0":isLast?"#fde68a":"#e2e8f0"}` }}>
+          <div key={i} style={{ marginBottom:16, background:isFirst?"linear-gradient(135deg,#f0fdf4,#dcfce7)":isLast?"#fffbeb":"#f8fafc", borderRadius:10, padding:"14px 16px", border:`1px solid ${isFirst?"#bbf7d0":isLast?"#fde68a":"#e2e8f0"}`, animation:`fadeIn 0.35s ease ${i*0.08}s both` }}>
             <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#0f172a" }}>{icon} {heading}</div>
             <div style={{ color:"#334155", fontSize:13.5, whiteSpace:"pre-wrap" }}>{body}</div>
           </div>
@@ -368,10 +369,8 @@ export default function App() {
     setLoadingId(null);
   }
 
-  const isFirstRender = useRef(true);
   useEffect(() => {
-    if (isFirstRender.current) { isFirstRender.current = false; return; }
-    try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {}
+    if (jobs.length > 0) { try { localStorage.setItem('jt_jobs', JSON.stringify(jobs)); } catch {} }
   }, [jobs]);
 
   function downloadCSV() {
@@ -405,9 +404,16 @@ export default function App() {
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap');
         * { box-sizing:border-box; margin:0; padding:0; }
         @keyframes spin { to { transform:rotate(360deg); } }
-        @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-        .job-row:hover { background:#f0f4ff !important; }
-        .board-btn:hover { transform:translateY(-2px); }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeInLeft { from { opacity:0; transform:translateX(-12px); } to { opacity:1; transform:translateX(0); } }
+        @keyframes scaleIn { from { opacity:0; transform:scale(0.95); } to { opacity:1; transform:scale(1); } }
+        @keyframes scoreReveal { from{transform:scale(0.5);opacity:0} to{transform:scale(1);opacity:1} }
+        .job-row { transition:all 0.2s ease !important; }
+        .job-row:hover { background:#f0f4ff !important; transform:translateX(3px); box-shadow:0 4px 12px rgba(99,102,241,0.1) !important; }
+        .board-btn { transition:all 0.2s ease !important; }
+        .board-btn:hover { transform:translateY(-4px); box-shadow:0 8px 20px rgba(0,0,0,0.12) !important; }
+        .stat-card { transition:all 0.2s ease !important; }
+        .stat-card:hover { transform:translateY(-2px); box-shadow:0 8px 20px rgba(0,0,0,0.08) !important; }
         textarea:focus, input:focus, select:focus { border-color:#6366f1 !important; box-shadow:0 0 0 3px rgba(99,102,241,0.1); }
         ::-webkit-scrollbar { width:5px; } ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
         .upload-zone:hover { border-color:#6366f1 !important; background:#f5f3ff !important; }
@@ -415,8 +421,8 @@ export default function App() {
 
       <div style={{ background:"#0f172a", padding:"0 32px", display:"flex", alignItems:"center", justifyContent:"space-between", height:56, position:"sticky", top:0, zIndex:50 }}>
         <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-          <div style={{ width:30, height:30, background:"linear-gradient(135deg,#6366f1,#8b5cf6)", borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", fontSize:15 }}>📋</div>
-          <span style={{ color:"#fff", fontWeight:700, fontSize:17 }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></span>
+          <svg width="30" height="30" viewBox="0 0 32 32" fill="none"><defs><linearGradient id="lg1" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stopColor="#6366f1"/><stop offset="100%" stopColor="#8b5cf6"/></linearGradient></defs><rect width="32" height="32" rx="8" fill="url(#lg1)"/><rect x="8" y="9" width="16" height="2.5" rx="1.25" fill="white" opacity="0.9"/><rect x="8" y="14.5" width="11" height="2.5" rx="1.25" fill="white" opacity="0.7"/><rect x="8" y="20" width="13" height="2.5" rx="1.25" fill="white" opacity="0.7"/><circle cx="24" cy="22" r="5" fill="#10b981"/><path d="M21.5 22l1.5 1.5 3-3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          <span style={{ color:"#fff", fontWeight:800, fontSize:17 }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></span>
         </div>
         <div style={{ display:"flex", gap:4 }}>
           {[{id:"tracker",label:"🗂 Tracker"},{id:"boards",label:"🔍 Job Boards"},{id:"resume",label:"📄 My Resume"}].map(tab=>(
@@ -527,7 +533,7 @@ export default function App() {
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"24px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:24 }}>
             {[{label:"Total Jobs",value:stats.total,icon:"📋",color:"#6366f1"},{label:"Applied",value:stats.applied,icon:"📤",color:"#3b82f6"},{label:"Interviewing",value:stats.interviewing,icon:"💬",color:"#7c3aed"},{label:"Offers",value:stats.offers,icon:"🎉",color:"#10b981"},{label:"Avg Match",value:stats.avgScore+"%",icon:"🎯",color:"#f59e0b"}].map(s=>(
-              <div key={s.label} style={{ background:"#fff",borderRadius:12,padding:"16px 20px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",borderTop:`3px solid ${s.color}` }}>
+              <div key={s.label} className="stat-card" style={{ background:"#fff",borderRadius:12,padding:"16px 20px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",borderTop:`3px solid ${s.color}`,animation:`fadeIn 0.4s ease ${i*0.07}s both` }}>
                 <div style={{ fontSize:20,marginBottom:6 }}>{s.icon}</div>
                 <div style={{ fontSize:26,fontWeight:800,color:"#0f172a",lineHeight:1 }}>{s.value}</div>
                 <div style={{ fontSize:12,color:"#64748b",marginTop:4,fontWeight:500 }}>{s.label}</div>
@@ -556,7 +562,7 @@ export default function App() {
                 : <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
                     {filtered.map(job=>(
                       <div key={job.id} className="job-row" onClick={()=>setSelected(job.id)}
-                        style={{ background:selected===job.id?"#eef2ff":"#fff",border:selected===job.id?"2px solid #6366f1":"2px solid transparent",borderRadius:12,padding:"14px 16px",cursor:"pointer",transition:"all 0.15s",boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
+                        style={{ background:selected===job.id?"#eef2ff":"#fff",border:selected===job.id?"2px solid #6366f1":"2px solid transparent",borderRadius:12,padding:"14px 16px",cursor:"pointer",boxShadow:selected===job.id?"0 4px 16px rgba(99,102,241,0.15)":"0 1px 3px rgba(0,0,0,0.06)",animation:"fadeInLeft 0.3s ease both" }}>
                         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6 }}>
                           <div>
                             <div style={{ fontWeight:700,fontSize:14,color:"#0f172a" }}>{job.title}</div>
