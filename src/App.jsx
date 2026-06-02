@@ -38,7 +38,7 @@ function ScoreBadge({ score }) {
   const bg    = score >= 80 ? "#ecfdf5" : score >= 65 ? "#fffbeb" : "#fef2f2";
   const label = score>=80?"Strong":score>=65?"Good":"Weak";
   return (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:bg, color, borderRadius:20, padding:"3px 12px", fontWeight:700, fontSize:12, animation:"scoreReveal 0.4s ease both", border:`1px solid ${color}33` }}>
+    <div style={{ display:"inline-flex", alignItems:"center", gap:5, background:bg, color, borderRadius:20, padding:"3px 12px", fontWeight:700, fontSize:12 }}>
       <span style={{ fontSize:8 }}>●</span> {score} <span style={{fontSize:10,opacity:0.75}}>{label}</span>
     </div>
   );
@@ -82,7 +82,7 @@ function AnalysisPanel({ analysis, loading, onRun, jobTitle, company, hasResume 
         const icon = Object.entries(icons).find(([k]) => heading.includes(k))?.[1] || "📌";
         const isFirst = i===0, isLast = i===sections.length-1;
         return (
-          <div key={i} style={{ marginBottom:16, background:isFirst?"linear-gradient(135deg,#f0fdf4,#dcfce7)":isLast?"#fffbeb":"#f8fafc", borderRadius:10, padding:"14px 16px", border:`1px solid ${isFirst?"#bbf7d0":isLast?"#fde68a":"#e2e8f0"}`, animation:`fadeIn 0.35s ease ${i*0.08}s both` }}>
+          <div key={i} style={{ marginBottom:16, background:isFirst?"linear-gradient(135deg,#f0fdf4,#dcfce7)":isLast?"#fffbeb":"#f8fafc", borderRadius:10, padding:"14px 16px", border:`1px solid ${isFirst?"#bbf7d0":isLast?"#fde68a":"#e2e8f0"}` }}>
             <div style={{ fontWeight:700, fontSize:13, marginBottom:6, color:"#0f172a" }}>{icon} {heading}</div>
             <div style={{ color:"#334155", fontSize:13.5, whiteSpace:"pre-wrap" }}>{body}</div>
           </div>
@@ -531,7 +531,7 @@ export default function App() {
         <div style={{ maxWidth:1280, margin:"0 auto", padding:"24px" }}>
           <div style={{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12, marginBottom:24 }}>
             {[{label:"Total Jobs",value:stats.total,icon:"📋",color:"#6366f1"},{label:"Applied",value:stats.applied,icon:"📤",color:"#3b82f6"},{label:"Interviewing",value:stats.interviewing,icon:"💬",color:"#7c3aed"},{label:"Offers",value:stats.offers,icon:"🎉",color:"#10b981"},{label:"Avg Match",value:stats.avgScore+"%",icon:"🎯",color:"#f59e0b"}].map(s=>(
-              <div key={s.label} className="stat-card" style={{ background:"#fff",borderRadius:12,padding:"16px 20px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",borderTop:`3px solid ${s.color}`,animation:`fadeIn 0.4s ease ${i*0.07}s both` }}>
+              <div key={s.label} className="stat-card" style={{ background:"#fff",borderRadius:12,padding:"16px 20px",boxShadow:"0 1px 3px rgba(0,0,0,0.06)",borderTop:`3px solid ${s.color}` }}>
                 <div style={{ fontSize:20,marginBottom:6 }}>{s.icon}</div>
                 <div style={{ fontSize:26,fontWeight:800,color:"#0f172a",lineHeight:1 }}>{s.value}</div>
                 <div style={{ fontSize:12,color:"#64748b",marginTop:4,fontWeight:500 }}>{s.label}</div>
@@ -560,7 +560,7 @@ export default function App() {
                 : <div style={{ display:"flex",flexDirection:"column",gap:8 }}>
                     {filtered.map(job=>(
                       <div key={job.id} className="job-row" onClick={()=>setSelected(job.id)}
-                        style={{ background:selected===job.id?"#eef2ff":"#fff",border:selected===job.id?"2px solid #6366f1":"2px solid transparent",borderRadius:12,padding:"14px 16px",cursor:"pointer",boxShadow:selected===job.id?"0 4px 16px rgba(99,102,241,0.15)":"0 1px 3px rgba(0,0,0,0.06)",animation:"fadeInLeft 0.3s ease both" }}>
+                        style={{ background:selected===job.id?"#eef2ff":"#fff",border:selected===job.id?"2px solid #6366f1":"2px solid transparent",borderRadius:12,padding:"14px 16px",cursor:"pointer",boxShadow:selected===job.id?"0 4px 16px rgba(99,102,241,0.15)":"0 1px 3px rgba(0,0,0,0.06)" }}>
                         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:6 }}>
                           <div>
                             <div style={{ fontWeight:700,fontSize:14,color:"#0f172a" }}>{job.title}</div>
