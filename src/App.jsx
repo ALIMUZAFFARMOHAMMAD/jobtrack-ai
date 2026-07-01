@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import ResumeTailor from "./ResumeTailor.jsx";
 
 const EMAILJS_SERVICE_ID = "service_qsuw8tv";
 const EMAILJS_TEMPLATE_ID = "template_q5ct06w";
@@ -426,7 +427,7 @@ export default function App() {
           <span style={{ color:"#fff", fontWeight:800, fontSize:17 }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></span>
         </div>
         <div style={{ display:"flex", gap:4 }}>
-          {[{id:"tracker",label:"🗂 Tracker"},{id:"boards",label:"🔍 Job Boards"},{id:"resume",label:"📄 My Resume"}].map(tab=>(
+          {[{id:"tracker",label:"🗂 Tracker"},{id:"boards",label:"🔍 Job Boards"},{id:"resume",label:"📄 My Resume"},{id:"tailor",label:"✨ Tailor Resume"}].map(tab=>(
             <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
               style={{ background:activeTab===tab.id?"#1e293b":"transparent", color:activeTab===tab.id?"#fff":"#94a3b8", border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:600, cursor:"pointer" }}>
               {tab.label}
@@ -452,6 +453,11 @@ export default function App() {
         <div style={{ background:"#fef2f2", borderBottom:"1px solid #fecaca", padding:"10px 32px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span style={{ color:"#dc2626", fontSize:14 }}>⚠️ {error}</span>
           <button onClick={()=>setError(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"#dc2626", fontSize:18 }}>✕</button>
+        </div>
+      )}
+      {activeTab==="tailor" && (
+        <div style={{ maxWidth:900, margin:"32px auto", padding:"0 24px" }}>
+          <ResumeTailor resumeText={resumeText} />
         </div>
       )}
       {activeTab==="boards" && (

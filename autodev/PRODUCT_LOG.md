@@ -18,16 +18,16 @@ app** (`src/`). Honest constraint: the extension can only track in-browser apply
 ### Phase plan
 - **P1 — Extension MVP (tracking):** ✅ built 2026-07-01 (hybrid auto-detect + one-click log, badge, local storage).
 - **P2 — Dashboard + export:** ✅ built 2026-07-01 (extension dashboard: stats, 14-day chart, table, CSV export).
-- **P3 — Resume tailoring (agents build next):** JD + resume → Claude returns an ATS-formatted, keyword-optimized resume + match score + gap list. Extend `api/analyze.js` (or add `api/tailor.js`); surface in the web app and/or a "Tailor resume" view in the extension.
+- **P3 — Resume tailoring:** ✅ core shipped 2026-07-01 in the **web app** (`api/tailor.js` + `src/ResumeTailor.jsx`, new "✨ Tailor Resume" tab). Agents can extend: DOCX/PDF export of the tailored resume, a "tailor for this job" button on tracker rows, and a tailoring entry point in the extension.
 - **P4 — Sync + web dashboard (agents):** optional account/cloud sync so the React web app mirrors the extension's data across devices; true .xlsx export (vendor SheetJS locally — no remote code, MV3 CSP).
 
 ---
 
 ## NOW (current focus)
-- **P3: Resume tailoring.** Accept `{resume, jobDescription}` and return `{atsResume, matchScore, missingKeywords[], suggestions[]}` from the serverless function. Add a simple web-app view to paste both and show the result. Keep the API key server-side only; never expose it to the client/extension.
+- **Tests.** Add Vitest + RTL. First: unit tests for `extension/lib/db.js` (pure logic — dedupe, stats, streak, CSV) and a web-app smoke test (mount App, assert no throw). This locks in everything shipped so far.
 
 ## NEXT
-- Add a lightweight test setup (Vitest + RTL) — start with a web-app smoke test AND unit tests for `extension/lib/db.js` (pure logic, easy wins).
+- Extend P3: "Tailor for this job" button on tracker rows (reuse `api/tailor.js` with the job's saved JD); export tailored resume as DOCX/PDF; expose tailoring from the extension.
 - Define a shared application-record schema so extension + web app agree (P4 groundwork).
 - True Excel (.xlsx) export in the extension dashboard by vendoring SheetJS locally.
 
@@ -43,8 +43,10 @@ app** (`src/`). Honest constraint: the extension can only track in-browser apply
 - (none)
 
 ## DONE LOG
+- 2026-07-01 — **P3 core shipped:** AI resume tailoring in the web app — `api/tailor.js` (server-side prompt, returns `{atsResume, matchScore, missingKeywords[], suggestions[]}`, key stays server-side) + `src/ResumeTailor.jsx` new "✨ Tailor Resume" tab with copy/download. Build + lint green. Live endpoint not run locally (Vercel functions + real key needed). See autodev/reports/2026-07-01.md.
 - 2026-07-01 — **P1+P2 shipped:** browser extension (`extension/`) with hybrid tracking (auto-detect on LinkedIn/Indeed/Greenhouse/Lever/Workday/Ashby + one-click log), toolbar badge, dashboard (stats, 14-day chart, table, CSV export). Storage layer unit-verified in Node. ESLint taught extension globals. See autodev/reports/2026-07-01.md.
 - 2026-06-30 — App-wide ErrorBoundary added (no more blank screen on render errors); fixed all 3 pre-existing ESLint errors for a green baseline; repo scaffolded (CLAUDE.md + brain). See autodev/reports/2026-06-30.md.
 
 ## OPEN QUESTIONS FOR MUZAFFAR
-- Resume tailoring UI: prefer it in the **web app**, the **extension**, or both? (Agents will default to the web app first — richer editing surface — unless told otherwise.)
+- Resume tailoring shipped in the **web app** (default). If you also want it inside the extension, say so and the agents will add it.
+- Tailored-resume export is currently plain-text (.txt). Want DOCX/PDF? (Agents can add it.)
