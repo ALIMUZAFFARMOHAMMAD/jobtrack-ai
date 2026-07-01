@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="popup.css" />
+    <title>JobTrack AI</title>
+  </head>
+  <body>
+    <header class="hdr">
+      <span class="logo">📈</span>
+      <span class="brand">JobTrack AI</span>
+    </header>
+
+    <section class="stats">
+      <div class="stat"><span id="today" class="num">0</span><span class="lbl">Today</span></div>
+      <div class="stat"><span id="streak" class="num">0</span><span class="lbl">Day streak</span></div>
+      <div class="stat"><span id="total" class="num">0</span><span class="lbl">Total</span></div>
+    </section>
+
+    <section class="form">
+      <p class="form-title">Log this application</p>
+      <label>Role<input id="title" type="text" placeholder="e.g. Product Manager" /></label>
+      <label>Company<input id="company" type="text" placeholder="e.g. Acme Inc" /></label>
+      <label>URL<input id="url" type="text" placeholder="https://..." /></label>
+      <button id="save" class="btn">＋ Log application</button>
+      <p id="msg" class="msg"></p>
+    </section>
+
+    <footer class="ftr">
+      <a href="#" id="open-dashboard">Open dashboard &amp; export →</a>
+    </footer>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

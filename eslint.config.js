@@ -23,4 +23,13 @@ export default defineConfig([
     files: ['api/**/*.js'],
     languageOptions: { globals: globals.node },
   },
+  {
+    // Browser extension: chrome.* APIs, service worker + browser globals.
+    files: ['extension/**/*.js'],
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.webextensions, ...globals.serviceworker },
+      sourceType: 'module',
+    },
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])

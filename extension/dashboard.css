@@ -1,0 +1,67 @@
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  color: #0f172a;
+  background: #f8fafc;
+}
+.wrap { max-width: 900px; margin: 0 auto; padding: 28px 20px 60px; }
+
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+.top h1 { font-size: 22px; margin: 0; }
+
+.btn {
+  padding: 9px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: #2563eb;
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+.btn:hover { background: #1d4ed8; }
+.btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+.cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 24px; }
+.card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card .num { font-size: 30px; font-weight: 800; color: #2563eb; }
+.card .lbl { font-size: 12px; color: #64748b; }
+
+.panel {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+}
+.panel h2 { font-size: 15px; margin: 0 0 14px; color: #334155; }
+
+.chart { display: flex; align-items: flex-end; gap: 6px; height: 160px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px; height: 100%; justify-content: flex-end; }
+.bar {
+  width: 100%;
+  max-width: 34px;
+  background: linear-gradient(180deg, #3b82f6, #2563eb);
+  border-radius: 6px 6px 0 0;
+  min-height: 3px;
+  position: relative;
+}
+.bar span { position: absolute; top: -18px; left: 0; right: 0; text-align: center; font-size: 11px; font-weight: 700; color: #334155; }
+.bar-col small { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { text-align: left; padding: 9px 10px; font-size: 13px; border-bottom: 1px solid #eef2f6; }
+th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; }
+td a { color: #2563eb; text-decoration: none; }
+td a:hover { text-decoration: underline; }
+.del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; }
+.empty { color: #64748b; font-size: 14px; padding: 8px 2px; }
