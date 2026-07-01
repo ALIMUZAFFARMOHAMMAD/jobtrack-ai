@@ -101,12 +101,15 @@ function AuthScreen({ onAuth }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
   const [resendTimer, setResendTimer] = useState(0);
-  const [emailjsReady, setEmailjsReady] = useState(false);
+  // Lazy init avoids a synchronous setState inside the effect (react-hooks/set-state-in-effect).
+  const [emailjsReady, setEmailjsReady] = useState(
+    () => typeof window !== "undefined" && !!window.emailjs
+  );
   const inputRefs = useRef([]);
   const timerRef  = useRef(null);
 
   useEffect(() => {
-    if (window.emailjs) { setEmailjsReady(true); return; }
+    if (window.emailjs) return; // already available; state is already true from lazy init
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     script.onload = () => { window.emailjs.init(EMAILJS_PUBLIC_KEY); setEmailjsReady(true); };
@@ -363,7 +366,7 @@ export default function App() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error||`HTTP ${res.status}`); }
       const data = await res.json();
       const text = data.content?.find(b=>b.type==="text")?.text || "Analysis unavailable.";
-      const scoreMatch = text.match(/(\d{1,3})[\/]100/) || text.match(/score[:\s]+(\d{1,3})/i);
+      const scoreMatch = text.match(/(\d{1,3})[/]100/) || text.match(/score[:\s]+(\d{1,3})/i);
       setJobs(prev=>prev.map(j=>j.id===job.id?{...j,analysis:text,score:scoreMatch?parseInt(scoreMatch[1]):job.score}:j));
     } catch(e) { setError("AI analysis failed: "+e.message); }
     setLoadingId(null);
