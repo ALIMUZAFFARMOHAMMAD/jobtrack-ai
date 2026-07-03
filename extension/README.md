@@ -18,7 +18,8 @@ per day, keep a streak, and export the data.
   suggestions — calls the same `/api/tailor` endpoint as the web app. Set your
   resume text and the deployed web app's URL once in **Settings** (`options.html`).
   Download the result as `.docx` (built by hand from a minimal OOXML template +
-  vendored JSZip), `.txt`, or print/save as PDF.
+  vendored JSZip), `.pdf` (vendored jsPDF, one-click — same UX as the web app),
+  or `.txt`.
 
 Coming next (built by the autodev agents): optional cloud sync with the web app
 (Phase 4).
@@ -52,4 +53,5 @@ Coming next (built by the autodev agents): optional cloud sync with the web app
 - `lib/db.js` — shared storage + stats + CSV helpers.
 - `lib/settings.js` — API base URL + resume text storage helpers.
 - `lib/docx.js` — builds a minimal valid `.docx` from plain text using JSZip.
+- `lib/pdf.js` — builds a paginated `.pdf` from plain text using jsPDF.
 - `lib/vendor/` — third-party code vendored locally (MV3 CSP forbids remote scripts).

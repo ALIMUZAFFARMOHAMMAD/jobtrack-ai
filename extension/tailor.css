@@ -109,19 +109,3 @@ textarea#jd:focus { border-color: #2563eb; }
   max-height: 480px;
   overflow: auto;
 }
-
-/* "Print / Save as PDF" prints just the resume text, nothing else. */
-@media print {
-  body * { visibility: hidden; }
-  #atsResume, #atsResume * { visibility: visible; }
-  #atsResume {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    max-height: none;
-    overflow: visible;
-    border: none;
-    padding: 0;
-  }
-}

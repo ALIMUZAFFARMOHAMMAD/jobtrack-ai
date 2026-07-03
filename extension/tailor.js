@@ -1,5 +1,6 @@
 import { getApiBaseUrl, getResumeText } from "./lib/settings.js";
 import { textToDocxBlob } from "./lib/docx.js";
+import { textToPdfBlob } from "./lib/pdf.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -7,8 +8,7 @@ function scoreColor(s) {
   return s >= 80 ? "#10b981" : s >= 60 ? "#f59e0b" : "#ef4444";
 }
 
-function download(filename, text, mime) {
-  const blob = new Blob([text], { type: mime });
+function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
@@ -17,6 +17,10 @@ function download(filename, text, mime) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function download(filename, text, mime) {
+  downloadBlob(new Blob([text], { type: mime }), filename);
 }
 
 function showJobContext() {
@@ -147,15 +151,7 @@ $("downloadDocx").addEventListener("click", async () => {
   btn.disabled = true;
   btn.textContent = "Building…";
   try {
-    const blob = await textToDocxBlob(text);
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "tailored-resume.docx";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    downloadBlob(await textToDocxBlob(text), "tailored-resume.docx");
   } catch (e) {
     const error = $("error");
     error.textContent = "Couldn't build the .docx file: " + e.message;
@@ -165,9 +161,22 @@ $("downloadDocx").addEventListener("click", async () => {
   btn.textContent = original;
 });
 
-$("printPdf").addEventListener("click", () => {
-  if (!$("atsResume").textContent) return;
-  window.print();
+$("downloadPdf").addEventListener("click", () => {
+  const text = $("atsResume").textContent;
+  if (!text) return;
+  const btn = $("downloadPdf");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Building…";
+  try {
+    downloadBlob(textToPdfBlob(text), "tailored-resume.pdf");
+  } catch (e) {
+    const error = $("error");
+    error.textContent = "Couldn't build the .pdf file: " + e.message;
+    error.hidden = false;
+  }
+  btn.disabled = false;
+  btn.textContent = original;
 });
 
 init();
