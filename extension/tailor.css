@@ -88,11 +88,13 @@ textarea#jd:focus { border-color: #2563eb; }
 .keywords span { background: #fef2f2; color: #b91c1c; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; }
 #suggestions { margin: 0; padding-left: 20px; color: #334155; font-size: 13.5px; line-height: 1.7; }
 
-.resume-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
-.resume-actions { display: flex; gap: 8px; }
+.resume-hdr { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; flex-wrap: wrap; gap: 8px; }
+.resume-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .btn-sm { border: none; border-radius: 8px; padding: 6px 14px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.btn-sm:disabled { cursor: not-allowed; opacity: 0.7; }
 .btn-copy { background: #eef2ff; color: #4338ca; }
 .btn-download { background: #2563eb; color: #fff; }
+.btn-txt { background: #f1f5f9; color: #475569; }
 
 #atsResume {
   white-space: pre-wrap;
@@ -106,4 +108,20 @@ textarea#jd:focus { border-color: #2563eb; }
   font-family: inherit;
   max-height: 480px;
   overflow: auto;
+}
+
+/* "Print / Save as PDF" prints just the resume text, nothing else. */
+@media print {
+  body * { visibility: hidden; }
+  #atsResume, #atsResume * { visibility: visible; }
+  #atsResume {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    max-height: none;
+    overflow: visible;
+    border: none;
+    padding: 0;
+  }
 }

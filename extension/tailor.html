@@ -49,13 +49,16 @@
           <div class="section-title">📄 ATS-optimized resume</div>
           <div class="resume-actions">
             <button id="copy" class="btn-sm btn-copy">Copy</button>
-            <button id="download" class="btn-sm btn-download">Download .txt</button>
+            <button id="downloadDocx" class="btn-sm btn-download">Download .docx</button>
+            <button id="printPdf" class="btn-sm btn-download">Print / Save as PDF</button>
+            <button id="download" class="btn-sm btn-txt">.txt</button>
           </div>
         </div>
         <pre id="atsResume"></pre>
       </div>
     </div>
 
+    <script src="lib/vendor/jszip.min.js"></script>
     <script type="module" src="tailor.js"></script>
   </body>
 </html>

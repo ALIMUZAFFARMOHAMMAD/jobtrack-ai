@@ -17,6 +17,8 @@ per day, keep a streak, and export the data.
   ATS-optimized rewrite of your resume, a match score, missing keywords, and
   suggestions — calls the same `/api/tailor` endpoint as the web app. Set your
   resume text and the deployed web app's URL once in **Settings** (`options.html`).
+  Download the result as `.docx` (built by hand from a minimal OOXML template +
+  vendored JSZip), `.txt`, or print/save as PDF.
 
 Coming next (built by the autodev agents): optional cloud sync with the web app
 (Phase 4).
@@ -49,3 +51,5 @@ Coming next (built by the autodev agents): optional cloud sync with the web app
 - `options.html/.js/.css` — Settings: web app URL + resume text.
 - `lib/db.js` — shared storage + stats + CSV helpers.
 - `lib/settings.js` — API base URL + resume text storage helpers.
+- `lib/docx.js` — builds a minimal valid `.docx` from plain text using JSZip.
+- `lib/vendor/` — third-party code vendored locally (MV3 CSP forbids remote scripts).

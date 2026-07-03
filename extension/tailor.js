@@ -1,4 +1,5 @@
 import { getApiBaseUrl, getResumeText } from "./lib/settings.js";
+import { textToDocxBlob } from "./lib/docx.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -136,6 +137,37 @@ $("download").addEventListener("click", () => {
   const text = $("atsResume").textContent;
   if (!text) return;
   download("tailored-resume.txt", text, "text/plain;charset=utf-8");
+});
+
+$("downloadDocx").addEventListener("click", async () => {
+  const text = $("atsResume").textContent;
+  if (!text) return;
+  const btn = $("downloadDocx");
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Building…";
+  try {
+    const blob = await textToDocxBlob(text);
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "tailored-resume.docx";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  } catch (e) {
+    const error = $("error");
+    error.textContent = "Couldn't build the .docx file: " + e.message;
+    error.hidden = false;
+  }
+  btn.disabled = false;
+  btn.textContent = original;
+});
+
+$("printPdf").addEventListener("click", () => {
+  if (!$("atsResume").textContent) return;
+  window.print();
 });
 
 init();

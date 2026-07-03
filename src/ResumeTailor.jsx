@@ -45,17 +45,65 @@ export default function ResumeTailor({ resumeText }) {
     }
   }
 
-  function downloadResume() {
-    if (!result?.atsResume) return;
-    const blob = new Blob([result.atsResume], { type: "text/plain;charset=utf-8" });
+  function triggerDownload(blob, filename) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "tailored-resume.txt";
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function downloadResume() {
+    if (!result?.atsResume) return;
+    triggerDownload(new Blob([result.atsResume], { type: "text/plain;charset=utf-8" }), "tailored-resume.txt");
+  }
+
+  async function downloadDocx() {
+    if (!result?.atsResume) return;
+    try {
+      const { Document, Packer, Paragraph, TextRun } = await import("docx");
+      const doc = new Document({
+        sections: [{
+          children: result.atsResume
+            .split(/\r?\n/)
+            .map((line) => new Paragraph({ children: [new TextRun(line)] })),
+        }],
+      });
+      triggerDownload(await Packer.toBlob(doc), "tailored-resume.docx");
+    } catch (e) {
+      setError("Couldn't build the .docx file: " + e.message);
+    }
+  }
+
+  async function downloadPdf() {
+    if (!result?.atsResume) return;
+    try {
+      const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "pt", format: "letter" });
+      const marginX = 54;
+      const marginY = 54;
+      const lineHeight = 14;
+      const maxWidth = doc.internal.pageSize.getWidth() - marginX * 2;
+      const pageHeight = doc.internal.pageSize.getHeight();
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      const lines = doc.splitTextToSize(result.atsResume, maxWidth);
+      let y = marginY;
+      for (const line of lines) {
+        if (y > pageHeight - marginY) {
+          doc.addPage();
+          y = marginY;
+        }
+        doc.text(line, marginX, y);
+        y += lineHeight;
+      }
+      doc.save("tailored-resume.pdf");
+    } catch (e) {
+      setError("Couldn't build the .pdf file: " + e.message);
+    }
   }
 
   const card = { background: "#fff", borderRadius: 16, padding: 28, boxShadow: "0 1px 3px rgba(0,0,0,0.08)" };
@@ -122,11 +170,13 @@ export default function ResumeTailor({ resumeText }) {
             </div>
           )}
 
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 8, flexWrap: "wrap", gap: 8 }}>
             <div style={{ fontSize: 13, fontWeight: 700, color: "#334155" }}>📄 ATS-optimized resume</div>
-            <div style={{ display: "flex", gap: 8 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
               <button onClick={copyResume} style={{ background: "#eef2ff", color: "#4338ca", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>{copied ? "✓ Copied" : "Copy"}</button>
-              <button onClick={downloadResume} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Download .txt</button>
+              <button onClick={downloadDocx} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Download .docx</button>
+              <button onClick={downloadPdf} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>Download .pdf</button>
+              <button onClick={downloadResume} style={{ background: "#f1f5f9", color: "#475569", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" }}>.txt</button>
             </div>
           </div>
           <pre style={{ whiteSpace: "pre-wrap", background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 12, padding: 18, fontSize: 13, lineHeight: 1.6, color: "#0f172a", fontFamily: "inherit", maxHeight: 480, overflow: "auto" }}>{result.atsResume}</pre>

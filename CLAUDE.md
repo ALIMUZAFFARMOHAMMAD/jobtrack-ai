@@ -23,5 +23,10 @@ Two surfaces working toward the same goal — help people track applications, ta
 ## History / known pain
 The app has repeatedly broken to a blank screen — usually from unsafe `localStorage` access on first render and from template-literal / animation code. Prefer small, defensive changes. Guard browser APIs. Verify `npm run build` succeeds AND the app renders (no blank screen) before committing.
 
+## Resume export (DOCX/PDF)
+- **Web app** (`src/ResumeTailor.jsx`): uses the `docx` and `jspdf` npm packages, both dynamically `import()`ed only when the corresponding download button is clicked — keeps them out of the initial bundle (they're large; `jspdf` pulls in `html2canvas`). Copy and `.txt` download remain available too.
+- **Extension** (`extension/tailor.js`): `.docx` is built by hand (`extension/lib/docx.js`) — a minimal valid OOXML document zipped with a vendored local copy of JSZip (`extension/lib/vendor/jszip.min.js`; MV3 CSP forbids remote scripts, so it can't come from a CDN). `.pdf` uses `window.print()` with a print-only stylesheet (no PDF library vendored, keeps the extension lean) — labelled "Print / Save as PDF" to set the right expectation.
+- Known upstream quirk: `jsPDF`'s bundled AcroForm plugin logs harmless `PubSub Error ... reading 'root'` to the console on every `.save()`/`.output()` call even though no form fields are used. The generated PDF is valid (`%PDF-1.3` header, correct `%%EOF` trailer) — verified manually. Not something to "fix" in our code.
+
 ## Notes
 - `fix_app.py` is a legacy one-off rewrite script, not part of the app runtime.
