@@ -32,4 +32,12 @@ export default defineConfig([
     },
     rules: { 'react-refresh/only-export-components': 'off' },
   },
+  {
+    // Vitest test files: describe/it/expect globals, plus chrome mock in extension tests.
+    files: ['**/*.test.{js,jsx}'],
+    languageOptions: {
+      globals: { ...globals.vitest, ...globals.browser, chrome: 'writable' },
+    },
+    rules: { 'react-refresh/only-export-components': 'off' },
+  },
 ])

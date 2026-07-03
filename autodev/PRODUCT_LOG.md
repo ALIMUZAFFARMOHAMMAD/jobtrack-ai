@@ -24,10 +24,9 @@ app** (`src/`). Honest constraint: the extension can only track in-browser apply
 ---
 
 ## NOW (current focus)
-- **Tests.** Add Vitest + RTL. First: unit tests for `extension/lib/db.js` (pure logic — dedupe, stats, streak, CSV) and a web-app smoke test (mount App, assert no throw). This locks in everything shipped so far.
+- Extend P3: "Tailor for this job" button on tracker rows (reuse `api/tailor.js` with the job's saved JD); export tailored resume as DOCX/PDF; expose tailoring from the extension.
 
 ## NEXT
-- Extend P3: "Tailor for this job" button on tracker rows (reuse `api/tailor.js` with the job's saved JD); export tailored resume as DOCX/PDF; expose tailoring from the extension.
 - Define a shared application-record schema so extension + web app agree (P4 groundwork).
 - True Excel (.xlsx) export in the extension dashboard by vendoring SheetJS locally.
 
@@ -43,6 +42,7 @@ app** (`src/`). Honest constraint: the extension can only track in-browser apply
 - (none)
 
 ## DONE LOG
+- 2026-07-02 — **Tests added:** Vitest + Testing Library wired up (`npm test`). 12 unit tests for `extension/lib/db.js` (todayStr, addApp defaults/dedupe/distinct URLs, deleteApp, statsFrom, lastNDays, toCSV incl. quoting) + 2 smoke tests for `src/App.jsx` (mounts without throwing, renders the signed-out gate). ESLint taught `*.test.{js,jsx}` globals. Build + lint + tests all green. See autodev/reports/2026-07-02.md.
 - 2026-07-01 — **P3 core shipped:** AI resume tailoring in the web app — `api/tailor.js` (server-side prompt, returns `{atsResume, matchScore, missingKeywords[], suggestions[]}`, key stays server-side) + `src/ResumeTailor.jsx` new "✨ Tailor Resume" tab with copy/download. Build + lint green. Live endpoint not run locally (Vercel functions + real key needed). See autodev/reports/2026-07-01.md.
 - 2026-07-01 — **P1+P2 shipped:** browser extension (`extension/`) with hybrid tracking (auto-detect on LinkedIn/Indeed/Greenhouse/Lever/Workday/Ashby + one-click log), toolbar badge, dashboard (stats, 14-day chart, table, CSV export). Storage layer unit-verified in Node. ESLint taught extension globals. See autodev/reports/2026-07-01.md.
 - 2026-06-30 — App-wide ErrorBoundary added (no more blank screen on render errors); fixed all 3 pre-existing ESLint errors for a green baseline; repo scaffolded (CLAUDE.md + brain). See autodev/reports/2026-06-30.md.
