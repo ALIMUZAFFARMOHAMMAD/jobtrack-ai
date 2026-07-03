@@ -9,6 +9,9 @@ body {
 
 .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
 .top h1 { font-size: 22px; margin: 0; }
+.top-actions { display: flex; align-items: center; gap: 14px; }
+.btn-link { font-size: 13px; font-weight: 600; color: #475569; text-decoration: none; }
+.btn-link:hover { color: #2563eb; }
 
 .btn {
   padding: 9px 16px;
@@ -63,5 +66,7 @@ th, td { text-align: left; padding: 9px 10px; font-size: 13px; border-bottom: 1p
 th { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #94a3b8; }
 td a { color: #2563eb; text-decoration: none; }
 td a:hover { text-decoration: underline; }
+.tailor { background: #eef2ff; border: none; color: #4338ca; cursor: pointer; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
+.tailor:hover { background: #e0e7ff; }
 .del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; }
 .empty { color: #64748b; font-size: 14px; padding: 8px 2px; }

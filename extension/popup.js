@@ -62,5 +62,10 @@ $("open-dashboard").addEventListener("click", (e) => {
   chrome.tabs.create({ url: chrome.runtime.getURL("dashboard.html") });
 });
 
+$("open-settings").addEventListener("click", (e) => {
+  e.preventDefault();
+  chrome.runtime.openOptionsPage();
+});
+
 render();
 prefill();

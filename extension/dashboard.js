@@ -65,6 +65,15 @@ function renderTable(apps) {
       roleCell = a.title;
     }
 
+    const tailorBtn = document.createElement("button");
+    tailorBtn.className = "tailor";
+    tailorBtn.textContent = "✨ Tailor";
+    tailorBtn.title = "Tailor your resume to this job";
+    tailorBtn.addEventListener("click", () => {
+      const params = new URLSearchParams({ company: a.company || "", title: a.title || "" });
+      chrome.tabs.create({ url: chrome.runtime.getURL(`tailor.html?${params}`) });
+    });
+
     const delBtn = document.createElement("button");
     delBtn.className = "del";
     delBtn.textContent = "✕";
@@ -79,6 +88,7 @@ function renderTable(apps) {
     tr.appendChild(td(a.company));
     tr.appendChild(td(roleCell));
     tr.appendChild(td(a.source || a.method || ""));
+    tr.appendChild(td(tailorBtn));
     tr.appendChild(td(delBtn));
     rows.appendChild(tr);
   }

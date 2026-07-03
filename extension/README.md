@@ -3,18 +3,23 @@
 Tracks your job applications while you apply, so you can see how many you've sent
 per day, keep a streak, and export the data.
 
-## Features (Phases 1–2)
+## Features (Phases 1–3)
 - **Hybrid tracking:** auto-detects application submissions on LinkedIn, Indeed,
   Greenhouse, Lever, Workday, and Ashby, **plus** a one-click "Log application"
   button in the popup that works on any site (auto-fills role/company/URL from the
   current tab).
 - **Toolbar badge** shows today's application count.
 - **Dashboard** (`dashboard.html`): today / last-7-days / streak / total, a 14-day
-  bar chart, and a full table (with delete to fix mis-detections).
+  bar chart, and a full table (with delete to fix mis-detections, and a "✨ Tailor"
+  button per row).
 - **CSV export** that opens in Excel or Google Sheets.
+- **AI resume tailoring** (`tailor.html`): paste a job description, get an
+  ATS-optimized rewrite of your resume, a match score, missing keywords, and
+  suggestions — calls the same `/api/tailor` endpoint as the web app. Set your
+  resume text and the deployed web app's URL once in **Settings** (`options.html`).
 
-Coming next (built by the autodev agents): AI resume tailoring against a job
-description (Phase 3) and optional cloud sync with the web app (Phase 4).
+Coming next (built by the autodev agents): optional cloud sync with the web app
+(Phase 4).
 
 ## Install (development)
 1. Open `chrome://extensions` (or `edge://extensions`).
@@ -40,4 +45,7 @@ description (Phase 3) and optional cloud sync with the web app (Phase 4).
 - `content/detect.js` — auto-detection on supported sites.
 - `popup.html/.js/.css` — quick stats + one-click logging.
 - `dashboard.html/.js/.css` — full dashboard + CSV export.
+- `tailor.html/.js/.css` — AI resume tailoring against a pasted job description.
+- `options.html/.js/.css` — Settings: web app URL + resume text.
 - `lib/db.js` — shared storage + stats + CSV helpers.
+- `lib/settings.js` — API base URL + resume text storage helpers.

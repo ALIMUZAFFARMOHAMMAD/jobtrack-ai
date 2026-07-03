@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="options.css" />
+    <title>JobTrack AI — Settings</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hdr">
+        <span class="logo">📈</span>
+        <span class="brand">JobTrack AI — Settings</span>
+      </header>
+
+      <section class="panel">
+        <h2>Tailoring API</h2>
+        <p class="hint">
+          Resume tailoring calls the same AI endpoint as the JobTrack AI web app
+          (<code>/api/tailor</code>). Enter the URL where you deployed the web app.
+        </p>
+        <label>
+          Web app URL
+          <input id="apiBase" type="text" placeholder="https://your-app.vercel.app" />
+        </label>
+      </section>
+
+      <section class="panel">
+        <h2>Your resume</h2>
+        <p class="hint">Pasted once, reused for every "✨ Tailor" request. Nothing leaves your browser except when you run a tailoring request.</p>
+        <label>
+          Resume text
+          <textarea id="resume" rows="12" placeholder="Paste your resume as plain text..."></textarea>
+        </label>
+      </section>
+
+      <button id="save" class="btn">Save settings</button>
+      <p id="msg" class="msg"></p>
+    </div>
+
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
