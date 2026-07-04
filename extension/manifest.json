@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "JobTrack AI — Application Tracker",
+  "version": "0.1.0",
+  "description": "Automatically counts your job applications across major job sites, with one-click logging, a dashboard, and CSV export.",
+  "permissions": ["storage", "activeTab", "tabs", "scripting"],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "JobTrack AI"
+  },
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": true
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.linkedin.com/*",
+        "*://*.indeed.com/*",
+        "*://*.greenhouse.io/*",
+        "*://boards.greenhouse.io/*",
+        "*://*.lever.co/*",
+        "*://jobs.lever.co/*",
+        "*://*.myworkdayjobs.com/*",
+        "*://*.ashbyhq.com/*"
+      ],
+      "js": ["content/detect.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

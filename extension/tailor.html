@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="tailor.css" />
+    <title>JobTrack AI — Tailor Resume</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="hdr">
+        <span class="logo">✨</span>
+        <span class="brand">Tailor Resume</span>
+      </header>
+
+      <p id="jobCtx" class="job-ctx" hidden></p>
+
+      <div id="noResume" class="notice" hidden>
+        📄 Add your resume in <a href="options.html" id="openSettings">Settings</a> first — this tailors that resume.
+      </div>
+      <div id="noApiBase" class="notice" hidden>
+        ⚙️ Set your web app URL in <a href="options.html" id="openSettings2">Settings</a> first — tailoring calls the same endpoint as the web app.
+      </div>
+
+      <label class="lbl" for="jd">Job description</label>
+      <textarea id="jd" rows="8" placeholder="Paste the full job description here..."></textarea>
+
+      <button id="run" class="btn">✨ Tailor my resume</button>
+      <p id="error" class="error" hidden></p>
+
+      <div id="result" class="result" hidden>
+        <div id="scoreBox" class="score-box" hidden>
+          <span class="score-lbl">Match score</span>
+          <span id="scoreNum" class="score-num"></span>
+          <span class="score-max">/100</span>
+        </div>
+
+        <div id="keywordsBox" class="section" hidden>
+          <div class="section-title">🏷️ Keywords to add (truthfully)</div>
+          <div id="keywords" class="keywords"></div>
+        </div>
+
+        <div id="suggestionsBox" class="section" hidden>
+          <div class="section-title">💡 Suggestions</div>
+          <ul id="suggestions"></ul>
+        </div>
+
+        <div class="resume-hdr">
+          <div class="section-title">📄 ATS-optimized resume</div>
+          <div class="resume-actions">
+            <button id="copy" class="btn-sm btn-copy">Copy</button>
+            <button id="downloadDocx" class="btn-sm btn-download">Download .docx</button>
+            <button id="downloadPdf" class="btn-sm btn-download">Download .pdf</button>
+            <button id="download" class="btn-sm btn-txt">.txt</button>
+          </div>
+        </div>
+        <pre id="atsResume"></pre>
+      </div>
+    </div>
+
+    <script src="lib/vendor/jszip.min.js"></script>
+    <script src="lib/vendor/jspdf.umd.min.js"></script>
+    <script type="module" src="tailor.js"></script>
+  </body>
+</html>

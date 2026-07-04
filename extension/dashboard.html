@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="dashboard.css" />
+    <title>JobTrack AI — Dashboard</title>
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="top">
+        <h1>📈 JobTrack AI</h1>
+        <div class="top-actions">
+          <a href="options.html" class="btn-link">⚙ Settings</a>
+          <button id="export" class="btn">⬇ Download CSV (Excel / Sheets)</button>
+        </div>
+      </header>
+
+      <section class="cards">
+        <div class="card"><span id="today" class="num">0</span><span class="lbl">Applied today</span></div>
+        <div class="card"><span id="week" class="num">0</span><span class="lbl">Last 7 days</span></div>
+        <div class="card"><span id="streak" class="num">0</span><span class="lbl">Day streak</span></div>
+        <div class="card"><span id="total" class="num">0</span><span class="lbl">Total tracked</span></div>
+      </section>
+
+      <section class="panel">
+        <h2>Last 14 days</h2>
+        <div id="chart" class="chart"></div>
+      </section>
+
+      <section class="panel">
+        <h2>Applications</h2>
+        <div id="table-wrap">
+          <table id="table">
+            <thead>
+              <tr><th>Date</th><th>Company</th><th>Role</th><th>Source</th><th></th><th></th></tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+          <p id="empty" class="empty" hidden>No applications tracked yet. Apply to a job and log it from the extension popup.</p>
+        </div>
+      </section>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+  </body>
+</html>

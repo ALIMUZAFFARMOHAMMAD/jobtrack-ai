@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect } from "react";
+import ResumeTailor from "./ResumeTailor.jsx";
+import { loadJSON, saveJSON, removeJSON } from "./lib/storage.js";
 
 const EMAILJS_SERVICE_ID = "service_qsuw8tv";
 const EMAILJS_TEMPLATE_ID = "template_q5ct06w";
@@ -101,12 +103,15 @@ function AuthScreen({ onAuth }) {
   const [loading, setLoading]     = useState(false);
   const [error, setError]         = useState("");
   const [resendTimer, setResendTimer] = useState(0);
-  const [emailjsReady, setEmailjsReady] = useState(false);
+  // Lazy init avoids a synchronous setState inside the effect (react-hooks/set-state-in-effect).
+  const [emailjsReady, setEmailjsReady] = useState(
+    () => typeof window !== "undefined" && !!window.emailjs
+  );
   const inputRefs = useRef([]);
   const timerRef  = useRef(null);
 
   useEffect(() => {
-    if (window.emailjs) { setEmailjsReady(true); return; }
+    if (window.emailjs) return; // already available; state is already true from lazy init
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     script.onload = () => { window.emailjs.init(EMAILJS_PUBLIC_KEY); setEmailjsReady(true); };
@@ -308,8 +313,8 @@ function buildPrompt(resume, title, company, jd) {
 }
 
 export default function App() {
-  const [user, setUser]                   = useState(null);
-  const [jobs, setJobs]                   = useState([]);
+  const [user, setUser]                   = useState(() => loadJSON("user", null));
+  const [jobs, setJobs]                   = useState(() => loadJSON("jobs", []));
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
@@ -323,6 +328,9 @@ export default function App() {
   const [filterStatus, setFilterStatus]   = useState("All");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
+
+  useEffect(() => { saveJSON("jobs", jobs); }, [jobs]);
+  useEffect(() => { if (user) saveJSON("user", user); else removeJSON("user"); }, [user]);
 
   const selectedJob = jobs.find(j => j.id === selected);
   const hasResume   = resumeText.trim().length > 50;
@@ -363,7 +371,7 @@ export default function App() {
       if (!res.ok) { const err = await res.json(); throw new Error(err.error||`HTTP ${res.status}`); }
       const data = await res.json();
       const text = data.content?.find(b=>b.type==="text")?.text || "Analysis unavailable.";
-      const scoreMatch = text.match(/(\d{1,3})[\/]100/) || text.match(/score[:\s]+(\d{1,3})/i);
+      const scoreMatch = text.match(/(\d{1,3})[/]100/) || text.match(/score[:\s]+(\d{1,3})/i);
       setJobs(prev=>prev.map(j=>j.id===job.id?{...j,analysis:text,score:scoreMatch?parseInt(scoreMatch[1]):job.score}:j));
     } catch(e) { setError("AI analysis failed: "+e.message); }
     setLoadingId(null);
@@ -423,7 +431,7 @@ export default function App() {
           <span style={{ color:"#fff", fontWeight:800, fontSize:17 }}>JobTrack <span style={{ color:"#818cf8" }}>AI</span></span>
         </div>
         <div style={{ display:"flex", gap:4 }}>
-          {[{id:"tracker",label:"🗂 Tracker"},{id:"boards",label:"🔍 Job Boards"},{id:"resume",label:"📄 My Resume"}].map(tab=>(
+          {[{id:"tracker",label:"🗂 Tracker"},{id:"boards",label:"🔍 Job Boards"},{id:"resume",label:"📄 My Resume"},{id:"tailor",label:"✨ Tailor Resume"}].map(tab=>(
             <button key={tab.id} onClick={()=>setActiveTab(tab.id)}
               style={{ background:activeTab===tab.id?"#1e293b":"transparent", color:activeTab===tab.id?"#fff":"#94a3b8", border:"none", borderRadius:6, padding:"6px 16px", fontSize:13, fontWeight:600, cursor:"pointer" }}>
               {tab.label}
@@ -449,6 +457,11 @@ export default function App() {
         <div style={{ background:"#fef2f2", borderBottom:"1px solid #fecaca", padding:"10px 32px", display:"flex", justifyContent:"space-between", alignItems:"center" }}>
           <span style={{ color:"#dc2626", fontSize:14 }}>⚠️ {error}</span>
           <button onClick={()=>setError(null)} style={{ background:"none", border:"none", cursor:"pointer", color:"#dc2626", fontSize:18 }}>✕</button>
+        </div>
+      )}
+      {activeTab==="tailor" && (
+        <div style={{ maxWidth:900, margin:"32px auto", padding:"0 24px" }}>
+          <ResumeTailor resumeText={resumeText} />
         </div>
       )}
       {activeTab==="boards" && (
