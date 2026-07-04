@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import ResumeTailor from "./ResumeTailor.jsx";
+import { loadJSON, saveJSON, removeJSON } from "./lib/storage.js";
 
 const EMAILJS_SERVICE_ID = "service_qsuw8tv";
 const EMAILJS_TEMPLATE_ID = "template_q5ct06w";
@@ -312,8 +313,8 @@ function buildPrompt(resume, title, company, jd) {
 }
 
 export default function App() {
-  const [user, setUser]                   = useState(null);
-  const [jobs, setJobs]                   = useState([]);
+  const [user, setUser]                   = useState(() => loadJSON("user", null));
+  const [jobs, setJobs]                   = useState(() => loadJSON("jobs", []));
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
@@ -327,6 +328,9 @@ export default function App() {
   const [filterStatus, setFilterStatus]   = useState("All");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
+
+  useEffect(() => { saveJSON("jobs", jobs); }, [jobs]);
+  useEffect(() => { if (user) saveJSON("user", user); else removeJSON("user"); }, [user]);
 
   const selectedJob = jobs.find(j => j.id === selected);
   const hasResume   = resumeText.trim().length > 50;
