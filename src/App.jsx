@@ -325,6 +325,7 @@ export default function App() {
   const [editingName, setEditingName]     = useState(false);
   const [newJob, setNewJob]               = useState({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
   const [activeTab, setActiveTab]         = useState("tracker");
+  const [tailorSeed, setTailorSeed]       = useState(null);
   const [filterStatus, setFilterStatus]   = useState("All");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
@@ -461,7 +462,12 @@ export default function App() {
       )}
       {activeTab==="tailor" && (
         <div style={{ maxWidth:900, margin:"32px auto", padding:"0 24px" }}>
-          <ResumeTailor resumeText={resumeText} />
+          <ResumeTailor
+            key={tailorSeed ? `${tailorSeed.title}-${tailorSeed.company}` : "default"}
+            resumeText={resumeText}
+            initialJd={tailorSeed?.jd}
+            jobContext={tailorSeed}
+          />
         </div>
       )}
       {activeTab==="boards" && (
@@ -603,6 +609,7 @@ export default function App() {
                           {selectedJob.salary&&<div style={{ color:"#818cf8",fontSize:13,marginTop:4,fontWeight:600 }}>{selectedJob.salary}</div>}
                         </div>
                         <div style={{ display:"flex",gap:8 }}>
+                          {selectedJob.jd&&<button onClick={()=>{setTailorSeed({jd:selectedJob.jd,title:selectedJob.title,company:selectedJob.company});setActiveTab("tailor");}} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer" }}>✨ Tailor Resume</button>}
                           {selectedJob.url&&<a href={selectedJob.url} target="_blank" rel="noopener noreferrer" style={{ background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,textDecoration:"none",border:"1px solid rgba(255,255,255,0.15)" }}>Apply →</a>}
                           <button onClick={()=>{setJobs(p=>p.filter(j=>j.id!==selectedJob.id));setSelected(null);}} style={{ background:"rgba(255,255,255,0.05)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"7px 10px",fontSize:13,cursor:"pointer" }}>🗑</button>
                         </div>
