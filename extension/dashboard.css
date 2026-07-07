@@ -68,5 +68,8 @@ td a { color: #2563eb; text-decoration: none; }
 td a:hover { text-decoration: underline; }
 .tailor { background: #eef2ff; border: none; color: #4338ca; cursor: pointer; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 20px; white-space: nowrap; }
 .tailor:hover { background: #e0e7ff; }
+.row-actions { display: inline-flex; gap: 10px; }
+.edit { background: none; border: none; color: #2563eb; cursor: pointer; font-size: 13px; }
 .del { background: none; border: none; color: #ef4444; cursor: pointer; font-size: 13px; }
+.edit-input { width: 100%; padding: 5px 7px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 6px; }
 .empty { color: #64748b; font-size: 14px; padding: 8px 2px; }

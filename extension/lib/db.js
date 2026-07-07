@@ -68,6 +68,19 @@ export async function deleteApp(id) {
   return apps;
 }
 
+/** Update an application's company/title (id and other fields are untouched). */
+export async function updateApp(id, { company, title } = {}) {
+  const apps = await getApps();
+  const idx = apps.findIndex((a) => a.id === id);
+  if (idx === -1) return apps;
+  const next = { ...apps[idx] };
+  if (company !== undefined) next.company = (company || "").trim() || "Unknown";
+  if (title !== undefined) next.title = (title || "").trim() || "Unknown role";
+  apps[idx] = next;
+  await saveApps(apps);
+  return apps;
+}
+
 /** Aggregate stats from a list of applications. */
 export function statsFrom(apps) {
   const byDate = {};

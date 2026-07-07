@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
-import { todayStr, addApp, deleteApp, getApps, statsFrom, lastNDays, toCSV } from './db.js'
+import { todayStr, addApp, deleteApp, updateApp, getApps, statsFrom, lastNDays, toCSV } from './db.js'
 
 function makeChromeStorageMock() {
   let store = {}
@@ -71,6 +71,28 @@ describe('addApp / getApps / deleteApp', () => {
     const remaining = await deleteApp(rec.id)
     expect(remaining).toHaveLength(0)
     expect(await getApps()).toHaveLength(0)
+  })
+})
+
+describe('updateApp', () => {
+  it('updates company and title for a matching id', async () => {
+    const { rec } = await addApp({ company: 'Acme', title: 'PM', url: 'https://acme.com/jobs/1' })
+    const updated = await updateApp(rec.id, { company: 'Globex', title: 'Senior PM' })
+    expect(updated.find((a) => a.id === rec.id)).toMatchObject({ company: 'Globex', title: 'Senior PM' })
+  })
+
+  it('falls back to placeholders for blank company/title', async () => {
+    const { rec } = await addApp({ company: 'Acme', title: 'PM', url: 'https://acme.com/jobs/1' })
+    const updated = await updateApp(rec.id, { company: '  ', title: '' })
+    expect(updated.find((a) => a.id === rec.id)).toMatchObject({ company: 'Unknown', title: 'Unknown role' })
+  })
+
+  it('leaves other fields untouched and is a no-op for an unknown id', async () => {
+    const { rec } = await addApp({ company: 'Acme', title: 'PM', url: 'https://acme.com/jobs/1' })
+    const before = await getApps()
+    const after = await updateApp('does-not-exist', { company: 'X' })
+    expect(after).toEqual(before)
+    expect(after.find((a) => a.id === rec.id).status).toBe('Applied')
   })
 })
 
