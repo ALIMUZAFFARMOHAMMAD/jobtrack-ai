@@ -55,4 +55,7 @@ app** (`src/`). Honest constraint: the extension can only track in-browser apply
 
 ## OPEN QUESTIONS FOR MUZAFFAR
 - Extension tailoring needs the deployed web app's URL, entered once in Settings — nothing is hardcoded/guessed. If the web app moves domains, update it there.
-- The extension now vendors two large minified libraries (JSZip ~98KB, jsPDF ~410KB) for one-click DOCX/PDF export. That's ~510KB added to the unpacked extension size — worth it for UX parity with the web app, flagging in case package size ever becomes a concern (e.g. Chrome Web Store review).
+
+## RESOLVED
+- 2026-07-07 — **Vendored library size (JSZip + jsPDF, ~510KB) is not a real Chrome Web Store risk:** checked official Chrome for Developers docs — the CWS package limit is 2GB, not the ~10MB some third-party tools imply. ~510KB is ~0.025% of that ceiling, so no action needed; swapping out tested, working vendored libraries for smaller alternatives would add risk for no real benefit. Closing this out rather than re-flagging it every run.
+- 2026-07-07 — **`fix_app.py` removed:** it was a legacy one-off script (a large base64-encoded rewrite blob) that had been sitting untracked at the repo root across multiple autodev runs, showing up as noise in `git status` every day. Confirmed via CLAUDE.md it was never part of the app runtime; deleted it and removed the now-stale reference from CLAUDE.md's Notes section.

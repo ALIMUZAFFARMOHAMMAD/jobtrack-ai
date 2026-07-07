@@ -28,5 +28,3 @@ The app has repeatedly broken to a blank screen — usually from unsafe `localSt
 - **Extension** (`extension/tailor.js`): one-click `.docx` and `.pdf`, matching the web app's UX exactly (no print dialog). `.docx` is built by hand (`extension/lib/docx.js`) — a minimal valid OOXML document zipped with a vendored local copy of JSZip (`extension/lib/vendor/jszip.min.js`). `.pdf` uses `extension/lib/pdf.js` (same pagination logic as the web app) against a vendored local copy of jsPDF's UMD build (`extension/lib/vendor/jspdf.umd.min.js`, exposes `window.jspdf.jsPDF`). Both are vendored because MV3 CSP forbids remote scripts — they can't be pulled from a CDN at runtime.
 - Known upstream quirk: `jsPDF`'s bundled AcroForm plugin logs harmless `PubSub Error ... reading 'root'` to the console on every `.save()`/`.output()` call even though no form fields are used. The generated PDF is valid (`%PDF-1.3` header, correct `%%EOF` trailer) — verified manually. Not something to "fix" in our code.
 
-## Notes
-- `fix_app.py` is a legacy one-off rewrite script, not part of the app runtime.
