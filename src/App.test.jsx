@@ -51,13 +51,13 @@ describe('App', () => {
     expect(screen.getByText(/Get started free/i)).toBeInTheDocument()
   })
 
-  it('rejects a PDF upload with a clear error instead of faking a successful read', async () => {
+  it('surfaces an error instead of storing placeholder text when a PDF fails to parse', async () => {
     signIn()
     render(<App />)
-    uploadResumeFile(new File(['%PDF-1.4 fake'], 'resume.pdf', { type: 'application/pdf' }))
-    await waitFor(() => expect(screen.getByText(/PDF upload isn't supported yet/i)).toBeInTheDocument())
+    uploadResumeFile(new File(['%PDF-1.4 not a real pdf'], 'resume.pdf', { type: 'application/pdf' }))
+    await waitFor(() => expect(screen.getByText(/Couldn't read resume\.pdf/i)).toBeInTheDocument(), { timeout: 10000 })
     expect(screen.queryByText(/✅ resume.pdf/)).not.toBeInTheDocument()
-  })
+  }, 15000)
 
   it('surfaces an error instead of storing placeholder text when a DOCX fails to parse', async () => {
     signIn()

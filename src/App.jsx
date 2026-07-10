@@ -255,8 +255,23 @@ function AuthScreen({ onAuth }) {
   );
 }
 
-// ponytail: no PDF text-extraction library is bundled. Add pdfjs-dist (~300KB)
-// here if PDF upload needs to "just work" instead of asking users to paste text.
+async function extractTextFromPDF(file) {
+  try {
+    const pdfjsLib = await import("pdfjs-dist");
+    const { default: workerSrc } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let text = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((item) => item.str).join(" ") + "\n";
+    }
+    return text.trim() || null;
+  } catch { return null; }
+}
+
 async function extractTextFromDOCX(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -330,10 +345,10 @@ export default function App() {
     try {
       const ext = file.name.split('.').pop().toLowerCase();
       let text = "";
-      if (ext==="pdf") { setError("PDF upload isn't supported yet — please paste your resume text below instead."); setUploadingResume(false); return; }
+      if (ext==="pdf") text = await extractTextFromPDF(file);
       else if (ext==="docx") text = await extractTextFromDOCX(file);
       else if (ext==="txt") text = await file.text();
-      else { setError("Unsupported file. Upload DOCX or TXT (PDF: paste text manually)."); setUploadingResume(false); return; }
+      else { setError("Unsupported file. Upload PDF, DOCX, or TXT."); setUploadingResume(false); return; }
       if (!text) { setError(`Couldn't read ${file.name} — please paste your resume text below instead.`); setUploadingResume(false); return; }
       setResumeText(text); setResumeFileName(file.name); setEditingResume(false);
     } catch(err) { setError("Failed to read file: " + err.message); }
@@ -509,7 +524,7 @@ export default function App() {
               <div className="upload-zone" onClick={()=>fileInputRef.current?.click()} style={{ border:"2px dashed #cbd5e1",borderRadius:12,padding:"48px 24px",textAlign:"center",cursor:"pointer",transition:"all 0.2s",marginBottom:20,background:"#fafafa" }}>
                 <div style={{ fontSize:40,marginBottom:12 }}>📄</div>
                 <div style={{ fontWeight:700,color:"#374151",fontSize:15,marginBottom:6 }}>Drop your resume here or click to upload</div>
-                <div style={{ color:"#94a3b8",fontSize:13 }}>Supports DOCX and TXT files (PDF: paste text manually)</div>
+                <div style={{ color:"#94a3b8",fontSize:13 }}>Supports PDF, DOCX, and TXT files</div>
               </div>
             )}
             {resumeFileName&&<div style={{ background:"#f0fdf4",borderRadius:8,padding:"10px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",border:"1px solid #bbf7d0" }}><span style={{ color:"#166534",fontSize:13,fontWeight:600 }}>✅ {resumeFileName}</span><button onClick={()=>{setResumeText("");setResumeFileName(null);}} style={{ background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:16 }}>✕</button></div>}
