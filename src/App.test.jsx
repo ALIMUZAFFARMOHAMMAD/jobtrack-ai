@@ -1,6 +1,16 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import App from './App.jsx'
+
+function signIn() {
+  window.localStorage.setItem('jobtrack_user', JSON.stringify({ name: 'Ali', email: 'ali@example.com' }))
+}
+
+function uploadResumeFile(file) {
+  fireEvent.click(screen.getByText(/My Resume/i))
+  const input = document.querySelector('input[type="file"]')
+  fireEvent.change(input, { target: { files: [file] } })
+}
 
 describe('App', () => {
   beforeEach(() => {
@@ -39,5 +49,21 @@ describe('App', () => {
     window.localStorage.setItem('jobtrack_user', '{not valid json')
     render(<App />)
     expect(screen.getByText(/Get started free/i)).toBeInTheDocument()
+  })
+
+  it('rejects a PDF upload with a clear error instead of faking a successful read', async () => {
+    signIn()
+    render(<App />)
+    uploadResumeFile(new File(['%PDF-1.4 fake'], 'resume.pdf', { type: 'application/pdf' }))
+    await waitFor(() => expect(screen.getByText(/PDF upload isn't supported yet/i)).toBeInTheDocument())
+    expect(screen.queryByText(/✅ resume.pdf/)).not.toBeInTheDocument()
+  })
+
+  it('surfaces an error instead of storing placeholder text when a DOCX fails to parse', async () => {
+    signIn()
+    render(<App />)
+    uploadResumeFile(new File(['not a real zip'], 'resume.docx', { type: 'application/vnd.openxmlformats' }))
+    await waitFor(() => expect(screen.getByText(/Couldn't read resume\.docx/i)).toBeInTheDocument())
+    expect(screen.queryByText(/✅ resume.docx/)).not.toBeInTheDocument()
   })
 })

@@ -115,6 +115,7 @@ function AuthScreen({ onAuth }) {
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     script.onload = () => { window.emailjs.init(EMAILJS_PUBLIC_KEY); setEmailjsReady(true); };
+    script.onerror = () => setError("Couldn't load the email service. Check your connection and reload the page.");
     document.head.appendChild(script);
   }, []);
 
@@ -254,43 +255,21 @@ function AuthScreen({ onAuth }) {
   );
 }
 
-async function extractTextFromPDF(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const typedArray = new Uint8Array(e.target.result);
-        const pdfjsLib = window['pdfjs-dist' + '/build/pdf'];
-        if (!pdfjsLib) { resolve(`[PDF: ${file.name}]\n\nPaste resume text manually.`); return; }
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-        let text = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        resolve(text.trim());
-      } catch { resolve(`[PDF: ${file.name}]\n\nCould not extract. Please paste manually.`); }
-    };
-    reader.readAsArrayBuffer(file);
-  });
-}
-
+// ponytail: no PDF text-extraction library is bundled. Add pdfjs-dist (~300KB)
+// here if PDF upload needs to "just work" instead of asking users to paste text.
 async function extractTextFromDOCX(file) {
   return new Promise((resolve) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const JSZip = window.JSZip;
-        if (!JSZip) { resolve(`[DOCX: ${file.name}]\n\nPaste resume text manually.`); return; }
+        const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(e.target.result);
         const xml = await zip.file('word/document.xml')?.async('string');
         if (!xml) throw new Error('No document.xml');
         const text = xml.replace(/<w:br\/>/g,'\n').replace(/<w:p /g,'\n').replace(/<[^>]+>/g,'')
           .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\n{3,}/g,'\n\n').trim();
-        resolve(text);
-      } catch { resolve(`[DOCX: ${file.name}]\n\nCould not extract. Please paste manually.`); }
+        resolve(text || null);
+      } catch { resolve(null); }
     };
     reader.readAsArrayBuffer(file);
   });
@@ -351,10 +330,11 @@ export default function App() {
     try {
       const ext = file.name.split('.').pop().toLowerCase();
       let text = "";
-      if (ext==="pdf") text = await extractTextFromPDF(file);
+      if (ext==="pdf") { setError("PDF upload isn't supported yet — please paste your resume text below instead."); setUploadingResume(false); return; }
       else if (ext==="docx") text = await extractTextFromDOCX(file);
       else if (ext==="txt") text = await file.text();
-      else { setError("Unsupported file. Upload PDF, DOCX, or TXT."); setUploadingResume(false); return; }
+      else { setError("Unsupported file. Upload DOCX or TXT (PDF: paste text manually)."); setUploadingResume(false); return; }
+      if (!text) { setError(`Couldn't read ${file.name} — please paste your resume text below instead.`); setUploadingResume(false); return; }
       setResumeText(text); setResumeFileName(file.name); setEditingResume(false);
     } catch(err) { setError("Failed to read file: " + err.message); }
     setUploadingResume(false);
@@ -529,7 +509,7 @@ export default function App() {
               <div className="upload-zone" onClick={()=>fileInputRef.current?.click()} style={{ border:"2px dashed #cbd5e1",borderRadius:12,padding:"48px 24px",textAlign:"center",cursor:"pointer",transition:"all 0.2s",marginBottom:20,background:"#fafafa" }}>
                 <div style={{ fontSize:40,marginBottom:12 }}>📄</div>
                 <div style={{ fontWeight:700,color:"#374151",fontSize:15,marginBottom:6 }}>Drop your resume here or click to upload</div>
-                <div style={{ color:"#94a3b8",fontSize:13 }}>Supports PDF, DOCX, and TXT files</div>
+                <div style={{ color:"#94a3b8",fontSize:13 }}>Supports DOCX and TXT files (PDF: paste text manually)</div>
               </div>
             )}
             {resumeFileName&&<div style={{ background:"#f0fdf4",borderRadius:8,padding:"10px 16px",marginBottom:16,display:"flex",alignItems:"center",justifyContent:"space-between",border:"1px solid #bbf7d0" }}><span style={{ color:"#166534",fontSize:13,fontWeight:600 }}>✅ {resumeFileName}</span><button onClick={()=>{setResumeText("");setResumeFileName(null);}} style={{ background:"none",border:"none",color:"#94a3b8",cursor:"pointer",fontSize:16 }}>✕</button></div>}
