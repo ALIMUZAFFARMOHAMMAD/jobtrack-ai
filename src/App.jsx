@@ -115,6 +115,7 @@ function AuthScreen({ onAuth }) {
     const script = document.createElement("script");
     script.src = "https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js";
     script.onload = () => { window.emailjs.init(EMAILJS_PUBLIC_KEY); setEmailjsReady(true); };
+    script.onerror = () => setError("Couldn't load the email service. Check your connection and reload the page.");
     document.head.appendChild(script);
   }, []);
 
@@ -255,26 +256,20 @@ function AuthScreen({ onAuth }) {
 }
 
 async function extractTextFromPDF(file) {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      try {
-        const typedArray = new Uint8Array(e.target.result);
-        const pdfjsLib = window['pdfjs-dist' + '/build/pdf'];
-        if (!pdfjsLib) { resolve(`[PDF: ${file.name}]\n\nPaste resume text manually.`); return; }
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-        const pdf = await pdfjsLib.getDocument(typedArray).promise;
-        let text = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map(item => item.str).join(' ') + '\n';
-        }
-        resolve(text.trim());
-      } catch { resolve(`[PDF: ${file.name}]\n\nCould not extract. Please paste manually.`); }
-    };
-    reader.readAsArrayBuffer(file);
-  });
+  try {
+    const pdfjsLib = await import("pdfjs-dist");
+    const { default: workerSrc } = await import("pdfjs-dist/build/pdf.worker.min.mjs?url");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = workerSrc;
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let text = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      text += content.items.map((item) => item.str).join(" ") + "\n";
+    }
+    return text.trim() || null;
+  } catch { return null; }
 }
 
 async function extractTextFromDOCX(file) {
@@ -282,15 +277,14 @@ async function extractTextFromDOCX(file) {
     const reader = new FileReader();
     reader.onload = async (e) => {
       try {
-        const JSZip = window.JSZip;
-        if (!JSZip) { resolve(`[DOCX: ${file.name}]\n\nPaste resume text manually.`); return; }
+        const { default: JSZip } = await import("jszip");
         const zip = await JSZip.loadAsync(e.target.result);
         const xml = await zip.file('word/document.xml')?.async('string');
         if (!xml) throw new Error('No document.xml');
         const text = xml.replace(/<w:br\/>/g,'\n').replace(/<w:p /g,'\n').replace(/<[^>]+>/g,'')
           .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/\n{3,}/g,'\n\n').trim();
-        resolve(text);
-      } catch { resolve(`[DOCX: ${file.name}]\n\nCould not extract. Please paste manually.`); }
+        resolve(text || null);
+      } catch { resolve(null); }
     };
     reader.readAsArrayBuffer(file);
   });
@@ -325,6 +319,7 @@ export default function App() {
   const [editingName, setEditingName]     = useState(false);
   const [newJob, setNewJob]               = useState({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
   const [activeTab, setActiveTab]         = useState("tracker");
+  const [tailorSeed, setTailorSeed]       = useState(null);
   const [filterStatus, setFilterStatus]   = useState("All");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
@@ -354,6 +349,7 @@ export default function App() {
       else if (ext==="docx") text = await extractTextFromDOCX(file);
       else if (ext==="txt") text = await file.text();
       else { setError("Unsupported file. Upload PDF, DOCX, or TXT."); setUploadingResume(false); return; }
+      if (!text) { setError(`Couldn't read ${file.name} — please paste your resume text below instead.`); setUploadingResume(false); return; }
       setResumeText(text); setResumeFileName(file.name); setEditingResume(false);
     } catch(err) { setError("Failed to read file: " + err.message); }
     setUploadingResume(false);
@@ -461,7 +457,12 @@ export default function App() {
       )}
       {activeTab==="tailor" && (
         <div style={{ maxWidth:900, margin:"32px auto", padding:"0 24px" }}>
-          <ResumeTailor resumeText={resumeText} />
+          <ResumeTailor
+            key={tailorSeed ? `${tailorSeed.title}-${tailorSeed.company}` : "default"}
+            resumeText={resumeText}
+            initialJd={tailorSeed?.jd}
+            jobContext={tailorSeed}
+          />
         </div>
       )}
       {activeTab==="boards" && (
@@ -603,6 +604,7 @@ export default function App() {
                           {selectedJob.salary&&<div style={{ color:"#818cf8",fontSize:13,marginTop:4,fontWeight:600 }}>{selectedJob.salary}</div>}
                         </div>
                         <div style={{ display:"flex",gap:8 }}>
+                          {selectedJob.jd&&<button onClick={()=>{setTailorSeed({jd:selectedJob.jd,title:selectedJob.title,company:selectedJob.company});setActiveTab("tailor");}} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,cursor:"pointer" }}>✨ Tailor Resume</button>}
                           {selectedJob.url&&<a href={selectedJob.url} target="_blank" rel="noopener noreferrer" style={{ background:"rgba(255,255,255,0.1)",color:"#fff",borderRadius:8,padding:"7px 14px",fontSize:12,fontWeight:600,textDecoration:"none",border:"1px solid rgba(255,255,255,0.15)" }}>Apply →</a>}
                           <button onClick={()=>{setJobs(p=>p.filter(j=>j.id!==selectedJob.id));setSelected(null);}} style={{ background:"rgba(255,255,255,0.05)",color:"#94a3b8",border:"1px solid rgba(255,255,255,0.1)",borderRadius:8,padding:"7px 10px",fontSize:13,cursor:"pointer" }}>🗑</button>
                         </div>

@@ -1,4 +1,4 @@
-import { getApps, statsFrom, lastNDays, toCSV, deleteApp, todayStr } from "./lib/db.js";
+import { getApps, statsFrom, lastNDays, toCSV, deleteApp, updateApp, todayStr } from "./lib/db.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -38,6 +38,8 @@ function renderChart(byDate) {
   }
 }
 
+let editingId = null;
+
 function renderTable(apps) {
   const rows = $("rows");
   rows.innerHTML = "";
@@ -52,6 +54,42 @@ function renderTable(apps) {
       else cell.textContent = html;
       return cell;
     };
+
+    if (a.id === editingId) {
+      const companyInput = document.createElement("input");
+      companyInput.className = "edit-input";
+      companyInput.value = a.company;
+
+      const titleInput = document.createElement("input");
+      titleInput.className = "edit-input";
+      titleInput.value = a.title;
+
+      const saveBtn = document.createElement("button");
+      saveBtn.className = "tailor";
+      saveBtn.textContent = "✔ Save";
+      saveBtn.addEventListener("click", async () => {
+        await updateApp(a.id, { company: companyInput.value, title: titleInput.value });
+        editingId = null;
+        await render();
+      });
+
+      const cancelBtn = document.createElement("button");
+      cancelBtn.className = "del";
+      cancelBtn.textContent = "Cancel";
+      cancelBtn.addEventListener("click", async () => {
+        editingId = null;
+        await render();
+      });
+
+      tr.appendChild(td(a.date));
+      tr.appendChild(td(companyInput));
+      tr.appendChild(td(titleInput));
+      tr.appendChild(td(a.source || a.method || ""));
+      tr.appendChild(td(saveBtn));
+      tr.appendChild(td(cancelBtn));
+      rows.appendChild(tr);
+      continue;
+    }
 
     let roleCell;
     if (a.url) {
@@ -74,6 +112,15 @@ function renderTable(apps) {
       chrome.tabs.create({ url: chrome.runtime.getURL(`tailor.html?${params}`) });
     });
 
+    const editBtn = document.createElement("button");
+    editBtn.className = "edit";
+    editBtn.textContent = "✎";
+    editBtn.title = "Edit company / role";
+    editBtn.addEventListener("click", async () => {
+      editingId = a.id;
+      await render();
+    });
+
     const delBtn = document.createElement("button");
     delBtn.className = "del";
     delBtn.textContent = "✕";
@@ -84,12 +131,17 @@ function renderTable(apps) {
       await render();
     });
 
+    const actions = document.createElement("span");
+    actions.className = "row-actions";
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+
     tr.appendChild(td(a.date));
     tr.appendChild(td(a.company));
     tr.appendChild(td(roleCell));
     tr.appendChild(td(a.source || a.method || ""));
     tr.appendChild(td(tailorBtn));
-    tr.appendChild(td(delBtn));
+    tr.appendChild(td(actions));
     rows.appendChild(tr);
   }
 }

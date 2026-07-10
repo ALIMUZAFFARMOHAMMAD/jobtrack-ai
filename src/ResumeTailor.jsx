@@ -2,8 +2,8 @@ import { useState } from "react";
 
 // P3 — AI resume tailoring. Paste a job description; get an ATS-optimized rewrite
 // of your resume plus a match score, missing keywords, and suggestions.
-export default function ResumeTailor({ resumeText }) {
-  const [jd, setJd] = useState("");
+export default function ResumeTailor({ resumeText, initialJd, jobContext }) {
+  const [jd, setJd] = useState(() => initialJd || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState(null);
@@ -116,6 +116,12 @@ export default function ResumeTailor({ resumeText }) {
         Paste a job description. Claude rewrites your saved resume in ATS-friendly format, adds the
         keywords it truthfully can, and scores the fit.
       </p>
+
+      {jobContext?.title && (
+        <div style={{ background: "#eef2ff", border: "1px solid #c7d2fe", borderRadius: 12, padding: "10px 16px", marginBottom: 16, color: "#3730a3", fontSize: 13.5, fontWeight: 600 }}>
+          🎯 Tailoring for <strong>{jobContext.title}</strong>{jobContext.company ? ` at ${jobContext.company}` : ""} — JD pre-filled from your tracker.
+        </div>
+      )}
 
       {!hasResume && (
         <div style={{ background: "#fffbeb", border: "1px dashed #fde68a", borderRadius: 12, padding: 16, marginBottom: 16, color: "#92400e", fontSize: 14 }}>

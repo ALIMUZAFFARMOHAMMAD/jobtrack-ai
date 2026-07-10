@@ -13,6 +13,8 @@
   "dependencies": {
     "docx": "^9.7.1",
     "jspdf": "^4.2.1",
+    "jszip": "^3.10.1",
+    "pdfjs-dist": "^6.1.200",
     "react": "^19.2.6",
     "react-dom": "^19.2.6"
   },
@@ -28,7 +30,6 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^29.1.1",
-    "jszip": "^3.10.1",
     "vite": "^8.0.12",
     "vitest": "^4.1.9"
   }
