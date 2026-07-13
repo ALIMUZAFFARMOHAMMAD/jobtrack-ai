@@ -312,9 +312,9 @@ export default function App() {
   const [selected, setSelected]           = useState(null);
   const [loadingId, setLoadingId]         = useState(null);
   const [showAdd, setShowAdd]             = useState(false);
-  const [resumeText, setResumeText]       = useState("");
+  const [resumeText, setResumeText]       = useState(() => loadJSON("resumeText", ""));
   const [editingResume, setEditingResume] = useState(false);
-  const [resumeFileName, setResumeFileName] = useState(null);
+  const [resumeFileName, setResumeFileName] = useState(() => loadJSON("resumeFileName", null));
   const [uploadingResume, setUploadingResume] = useState(false);
   const [editingName, setEditingName]     = useState(false);
   const [newJob, setNewJob]               = useState({ company:"", title:"", location:"Remote", salary:"", status:"Saved", url:"", source:"", jd:"" });
@@ -326,6 +326,8 @@ export default function App() {
 
   useEffect(() => { saveJSON("jobs", jobs); }, [jobs]);
   useEffect(() => { if (user) saveJSON("user", user); else removeJSON("user"); }, [user]);
+  useEffect(() => { if (resumeText) saveJSON("resumeText", resumeText); else removeJSON("resumeText"); }, [resumeText]);
+  useEffect(() => { if (resumeFileName) saveJSON("resumeFileName", resumeFileName); else removeJSON("resumeFileName"); }, [resumeFileName]);
 
   const selectedJob = jobs.find(j => j.id === selected);
   const hasResume   = resumeText.trim().length > 50;
