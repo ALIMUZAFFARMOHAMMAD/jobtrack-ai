@@ -45,6 +45,15 @@ describe('App', () => {
     expect(screen.getByText(/Acme/)).toBeInTheDocument()
   })
 
+  it('restores a previously uploaded resume from localStorage instead of resetting on refresh', () => {
+    signIn()
+    window.localStorage.setItem('jobtrack_resumeText', JSON.stringify('SKILLS: SQL, Power BI, Agile...\nEXPERIENCE:\n- Acme (2020-2024): PM'))
+    window.localStorage.setItem('jobtrack_resumeFileName', JSON.stringify('resume.pdf'))
+    render(<App />)
+    fireEvent.click(screen.getByText(/My Resume/i))
+    expect(screen.getByText(/✅ resume\.pdf/)).toBeInTheDocument()
+  })
+
   it('ignores corrupted localStorage data and falls back to the signed-out gate', () => {
     window.localStorage.setItem('jobtrack_user', '{not valid json')
     render(<App />)
