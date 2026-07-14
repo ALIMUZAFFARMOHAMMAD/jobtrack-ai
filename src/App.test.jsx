@@ -75,4 +75,18 @@ describe('App', () => {
     await waitFor(() => expect(screen.getByText(/Couldn't read resume\.docx/i)).toBeInTheDocument())
     expect(screen.queryByText(/✅ resume.docx/)).not.toBeInTheDocument()
   })
+
+  it('filters the tracker list by title or company via the search box', () => {
+    signIn()
+    window.localStorage.setItem('jobtrack_jobs', JSON.stringify([
+      { id: 1, company: 'Acme', title: 'Product Manager', location: 'Remote', status: 'Applied', date: '2026-07-01', score: 0 },
+      { id: 2, company: 'Globex', title: 'Data Analyst', location: 'Remote', status: 'Saved', date: '2026-07-01', score: 0 },
+    ]))
+    render(<App />)
+    expect(screen.getByText('Product Manager')).toBeInTheDocument()
+    expect(screen.getByText('Data Analyst')).toBeInTheDocument()
+    fireEvent.change(screen.getByPlaceholderText(/Search by title or company/i), { target: { value: 'acme' } })
+    expect(screen.getByText('Product Manager')).toBeInTheDocument()
+    expect(screen.queryByText('Data Analyst')).not.toBeInTheDocument()
+  })
 })

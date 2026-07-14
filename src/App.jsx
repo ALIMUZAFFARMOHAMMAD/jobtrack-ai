@@ -321,6 +321,7 @@ export default function App() {
   const [activeTab, setActiveTab]         = useState("tracker");
   const [tailorSeed, setTailorSeed]       = useState(null);
   const [filterStatus, setFilterStatus]   = useState("All");
+  const [searchQuery, setSearchQuery]     = useState("");
   const [error, setError]                 = useState(null);
   const fileInputRef                      = useRef(null);
 
@@ -398,7 +399,10 @@ export default function App() {
 
   if (!user) return <AuthScreen onAuth={u => setUser(u)} />;
 
-  const filtered = (filterStatus==="All"?jobs:jobs.filter(j=>j.status===filterStatus)).slice().sort((a,b)=>(b.score||0)-(a.score||0));
+  const q = searchQuery.trim().toLowerCase();
+  const filtered = (filterStatus==="All"?jobs:jobs.filter(j=>j.status===filterStatus))
+    .filter(j=>!q||j.title?.toLowerCase().includes(q)||j.company?.toLowerCase().includes(q))
+    .slice().sort((a,b)=>(b.score||0)-(a.score||0));
   const inputStyle = {width:"100%",padding:"8px 12px",borderRadius:8,border:"1px solid #e2e8f0",fontSize:14,color:"#1e293b",background:"#fff",outline:"none",boxSizing:"border-box"};
   const labelStyle = {fontSize:12,fontWeight:600,color:"#64748b",letterSpacing:"0.04em",textTransform:"uppercase",marginBottom:4,display:"block"};
 
@@ -556,13 +560,16 @@ export default function App() {
           </div>
           <div style={{ display:"grid", gridTemplateColumns:"400px 1fr", gap:20, alignItems:"start" }}>
             <div>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:8 }}>
                 <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)} style={{ ...inputStyle,width:"auto",fontSize:13,padding:"6px 12px" }}>
                   <option>All</option>{STATUSES.map(s=><option key={s}>{s}</option>)}
                 </select>
                 <button onClick={()=>setShowAdd(true)} style={{ background:"linear-gradient(135deg,#6366f1,#8b5cf6)",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontWeight:600,fontSize:13,cursor:"pointer" }}>+ Add Job</button>
                 <button onClick={downloadCSV} disabled={!jobs.length} style={{background:"#f1f5f9",color:"#374151",border:"1px solid #e2e8f0",borderRadius:8,padding:"8px 12px",fontSize:13,fontWeight:600,cursor:jobs.length?"pointer":"not-allowed",opacity:jobs.length?1:0.4}}>⬇ CSV</button>
               </div>
+              {jobs.length>0&&(
+                <input value={searchQuery} onChange={e=>setSearchQuery(e.target.value)} placeholder="🔍 Search by title or company..." style={{ ...inputStyle,marginBottom:12,fontSize:13 }} />
+              )}
               {jobs.length===0
                 ? <div style={{ background:"#fff",borderRadius:16,padding:"48px 32px",textAlign:"center",boxShadow:"0 1px 3px rgba(0,0,0,0.06)" }}>
                     <div style={{ fontSize:48,marginBottom:16 }}>🎯</div>
@@ -591,7 +598,7 @@ export default function App() {
                         {job.analysis&&<div style={{ marginTop:6,fontSize:11,color:"#6366f1",fontWeight:600 }}>✓ Analysis complete</div>}
                       </div>
                     ))}
-                    {filtered.length===0&&jobs.length>0&&<div style={{ textAlign:"center",padding:"40px 20px",color:"#94a3b8",fontSize:14 }}>No jobs with status "{filterStatus}".</div>}
+                    {filtered.length===0&&jobs.length>0&&<div style={{ textAlign:"center",padding:"40px 20px",color:"#94a3b8",fontSize:14 }}>{q?`No jobs matching "${searchQuery}".`:`No jobs with status "${filterStatus}".`}</div>}
                   </div>
               }
             </div>
