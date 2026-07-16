@@ -74,6 +74,25 @@ describe('addApp / getApps / deleteApp', () => {
   })
 })
 
+describe('storage failure resilience', () => {
+  it('getApps returns an empty list instead of throwing when chrome.storage.local.get rejects', async () => {
+    globalThis.chrome = { storage: { local: { get: vi.fn(async () => { throw new Error('context invalidated') }) } } }
+    await expect(getApps()).resolves.toEqual([])
+  })
+
+  it('addApp resolves instead of throwing when chrome.storage.local.set rejects (quota/disabled)', async () => {
+    globalThis.chrome = {
+      storage: {
+        local: {
+          get: vi.fn(async () => ({})),
+          set: vi.fn(async () => { throw new Error('QUOTA_BYTES exceeded') }),
+        },
+      },
+    }
+    await expect(addApp({ company: 'Acme', title: 'PM', url: 'https://acme.com/jobs/1' })).resolves.toMatchObject({ added: true })
+  })
+})
+
 describe('updateApp', () => {
   it('updates company and title for a matching id', async () => {
     const { rec } = await addApp({ company: 'Acme', title: 'PM', url: 'https://acme.com/jobs/1' })

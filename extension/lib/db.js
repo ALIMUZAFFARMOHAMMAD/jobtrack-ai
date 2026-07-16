@@ -10,13 +10,24 @@ export function todayStr(d = new Date()) {
   return local.toISOString().slice(0, 10);
 }
 
+// Never throw — a storage read/write failure (extension context invalidated,
+// quota exceeded, storage disabled) should degrade to an empty list rather
+// than leave popup/dashboard stuck on an unhandled rejection (blank UI).
 export async function getApps() {
-  const r = await chrome.storage.local.get(KEY);
-  return Array.isArray(r[KEY]) ? r[KEY] : [];
+  try {
+    const r = await chrome.storage.local.get(KEY);
+    return Array.isArray(r[KEY]) ? r[KEY] : [];
+  } catch {
+    return [];
+  }
 }
 
 async function saveApps(apps) {
-  await chrome.storage.local.set({ [KEY]: apps });
+  try {
+    await chrome.storage.local.set({ [KEY]: apps });
+  } catch {
+    // storage full/disabled — fail silently, mirroring src/lib/storage.js
+  }
 }
 
 /** Dedupe key: one application per URL path per day. */
