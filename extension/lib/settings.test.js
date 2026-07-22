@@ -43,3 +43,17 @@ describe('resumeText', () => {
     expect(await getResumeText()).toBe('')
   })
 })
+
+describe('storage failure resilience', () => {
+  it('getApiBaseUrl/getResumeText resolve to "" instead of throwing when chrome.storage.local.get rejects', async () => {
+    globalThis.chrome = { storage: { local: { get: vi.fn(async () => { throw new Error('context invalidated') }) } } }
+    await expect(getApiBaseUrl()).resolves.toBe('')
+    await expect(getResumeText()).resolves.toBe('')
+  })
+
+  it('setApiBaseUrl/setResumeText resolve the cleaned value instead of throwing when chrome.storage.local.set rejects (quota/disabled)', async () => {
+    globalThis.chrome = { storage: { local: { set: vi.fn(async () => { throw new Error('QUOTA_BYTES exceeded') }) } } }
+    await expect(setApiBaseUrl('  https://example.vercel.app/// ')).resolves.toBe('https://example.vercel.app')
+    await expect(setResumeText('Jane Doe')).resolves.toBe('Jane Doe')
+  })
+})
